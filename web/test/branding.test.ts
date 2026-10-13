@@ -19,7 +19,7 @@ test("default mode → OpenTakeoff, no company, no credit, prefixed cover title"
   assert.equal(b.company, null);
   assert.equal(b.brandName, OT_NAME);
   assert.equal(b.credit, null);
-  assert.equal(b.coverTitle, "OpenTakeoff · Marked Set");
+  assert.equal(b.coverTitle, "Orkestro Takeoff · Marked Set");
 });
 
 test("clear-label with a valid profile → that trade name brands the doc", () => {
@@ -40,7 +40,7 @@ test("clear-label with no profiles falls back to default (nothing to brand as)",
   const b = resolveBranding({ mode: "clearlabel", profileId: "a", profiles: [] });
   assert.equal(b.clear, false);
   assert.equal(b.brandName, OT_NAME);
-  assert.equal(b.coverTitle, "OpenTakeoff · Marked Set");
+  assert.equal(b.coverTitle, "Orkestro Takeoff · Marked Set");
 });
 
 test("clear-label with a stale profileId falls back to the first profile", () => {
@@ -65,10 +65,10 @@ test("garbage / missing mode → default", () => {
 // export titles follow the brand name (decision: exports follow the mode) — the
 // resolver hands brandName to each CSV, defaulting to OpenTakeoff when unbranded
 test("CSV export titles carry the brand name (default OpenTakeoff)", () => {
-  assert.match(totalsToCsv([], "Proj"), /^# Proj — OpenTakeoff report/);
+  assert.match(totalsToCsv([], "Proj"), /^# Proj — Orkestro Takeoff report/);
   assert.match(totalsToCsv([], "Proj", null, null, null, null, null, "345 Flooring"), /^# Proj — 345 Flooring report/);
-  assert.match(shapesToCsv([], "Proj"), /^# Proj — OpenTakeoff shapes/);
+  assert.match(shapesToCsv([], "Proj"), /^# Proj — Orkestro Takeoff shapes/);
   assert.match(shapesToCsv([], "Proj", "345 Flooring"), /^# Proj — 345 Flooring shapes/);
-  assert.match(rfisToCsv([], [], "Proj"), /^# Proj — OpenTakeoff RFI log/);
+  assert.match(rfisToCsv([], [], "Proj"), /^# Proj — Orkestro Takeoff RFI log/);
   assert.match(rfisToCsv([], [], "Proj", null, "345 Flooring"), /^# Proj — 345 Flooring RFI log/);
 });
