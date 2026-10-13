@@ -4,6 +4,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from "react
 import "./styles/tokens.css";
 import "./styles/app.css";
 import "./styles/print.css";   // OT-only print block — kept out of app.css so tokens/app stay byte-synced with Spline
+import "./styles/orkestro.css"; // Orkestro brand layer
 import TakeoffCanvas from "./pages/TakeoffCanvas.jsx";
 import ProjectHome from "./components/ProjectHome.jsx";
 import { GoogleAuthProvider, useGoogleAuth } from "./lib/google/AuthContext.jsx";
@@ -48,7 +49,7 @@ const centered = {
 };
 const brand = (
   <strong style={{ fontFamily: "var(--f-display)", fontSize: 20, letterSpacing: "-0.02em" }}>
-    open<span style={{ fontStyle: "italic", color: "var(--cobalt)" }}>takeoff</span>
+    orkestro<span style={{ fontStyle: "italic", color: "var(--cobalt)" }}> takeoff</span>
   </strong>
 );
 
