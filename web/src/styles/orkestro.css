@@ -1,0 +1,82 @@
+/* Orkestro brand layer. Loaded after tokens.css / premiumWorkspace.css and
+   written with one extra element of specificity (html …) so it wins regardless
+   of bundle order. Upstream files stay untouched, which keeps merges from
+   Kentucky-ai/opentakeoff clean: re-theme here, not in tokens.css.
+   Palette: Orkestro navy #1B2340, purple #78069E, plum #48035F, indigo #332E8B,
+   lavender #FBF3FF. Display type: Poppins (linked in index.html). */
+
+html:root {
+  --f-display: "Poppins", "Inter", system-ui, sans-serif;
+
+  --ink:         #1b2340;
+  --ink-soft:    #2b2f3a;
+  --ink-muted:   #5f6378;
+  --ink-secondary: #4b4f63;
+
+  --cobalt:      #78069e;
+  --cobalt-deep: #48035f;
+  --fleck-blue:  #332e8b;
+
+  --tint-select: #fbf3ff;
+  --tint-08: rgba(120, 6, 158, .07);
+  --tint-14: rgba(120, 6, 158, .13);
+  --ring: 0 0 0 3px rgba(120, 6, 158, .2);
+  --scrim: rgba(27, 35, 64, .45);
+}
+
+@media screen {
+  html:root[data-theme="dark"] {
+    --ink:         #e4e2f2;
+    --ink-soft:    #c3bfdc;
+    --ink-secondary: #a9a3c6;
+
+    --cobalt:      #c77dff;
+    --cobalt-deep: #e0b3ff;
+
+    --tint-select: #1d0b29;
+    --tint-08: rgba(199, 125, 255, .10);
+    --tint-14: rgba(199, 125, 255, .20);
+    --ring: 0 0 0 3px rgba(199, 125, 255, .7);
+    --glow: 0 0 9px rgba(199, 125, 255, .55);
+  }
+}
+
+/* Premium workspace looks */
+html .premium-workspace {
+  --f-display: "Poppins", "Inter", system-ui, sans-serif;
+  --workspace-active-face: linear-gradient(150deg, #fbf3ff, #f1ddfa);
+  --workspace-lit: #c77dff;
+}
+html .premium-workspace[data-workspace-look=light] {
+  --ink: #1b2340;
+  --ink-soft: #2b2f3a;
+  --cobalt: #78069e;
+  --cobalt-deep: #5a0577;
+  --tint-select: #f4e6fb;
+  --status-bg: #1b2340;
+  --status-acc: #e0b3ff;
+  --scrim: #1b234099;
+}
+html .premium-workspace[data-workspace-look=graphite],
+html .premium-workspace[data-workspace-look=hud] {
+  --cobalt: #c990f0;
+  --cobalt-deep: #e3c2fa;
+  --accent-contrast: #1b0a26;
+  --tint-select: #3a2152;
+  --status-acc: #e0b3ff;
+  --workspace-active-face: linear-gradient(145deg, #5d2e85, #3a2152);
+  --workspace-glow: 0 0 calc(20px * var(--workspace-glow-strength)) rgb(199 125 255 / var(--workspace-glow-strength));
+}
+html .premium-workspace[data-workspace-look=hud] {
+  --workspace-active-face: linear-gradient(#3a1656, #220c35);
+}
+html .premium-workspace .calm-header .calm-report {
+  background: linear-gradient(#8e1bb5, #78069e);
+  border-color: #b060d066;
+}
+html .calm-brand { font-family: var(--f-display); color: var(--ink); font-weight: 700; }
+html .premium-workspace .calm-brand span { color: var(--cobalt); }
+
+/* The upstream "Request Premium" early-access list is a Netlify form owned by
+   the upstream project; it can't receive submissions from this deploy. */
+[data-premium-trigger] { display: none !important; }
