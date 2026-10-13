@@ -50,7 +50,7 @@ export function shapesDetail(conditions, shapes, sheetLabel) {
   });
 }
 
-export function shapesToCsv(rows, projectName = "", brandName = "OpenTakeoff", units = "imperial") {
+export function shapesToCsv(rows, projectName = "", brandName = "Orkestro Takeoff", units = "imperial") {
   const M = units === "metric";
   const areaUnit = M ? "m2" : "SF";
   const lengthUnit = M ? "m" : "LF";

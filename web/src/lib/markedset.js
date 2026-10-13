@@ -279,8 +279,8 @@ export async function buildMarkedSetPdf({ projectName, dark, sheets, shapes, mar
   // emailed around, so it should say what produced it. It also lets the MCP
   // export recognize its own prior output and overwrite that without ceremony,
   // while still refusing to clobber a file it didn't write (mcp/src/safewrite.ts).
-  doc.setProducer("OpenTakeoff");
-  doc.setCreator("OpenTakeoff");
+  doc.setProducer("Orkestro Takeoff (OpenTakeoff engine)");
+  doc.setCreator("Orkestro Takeoff");
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const ink = dark ? rgb(0.93, 0.92, 0.89) : rgb(0.13, 0.12, 0.1);
