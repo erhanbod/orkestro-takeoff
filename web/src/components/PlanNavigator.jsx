@@ -19,6 +19,7 @@
 // keyed on "is this mounted", never on the canvas' view/mode staying in sync.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SOURCE_URL, UPSTREAM_URL } from "../brand/orkestro.js";
+import { OrkestroLogo } from "../brand/OrkestroLogo.jsx";
 import { Link, useNavigate } from "react-router";
 import { Icon } from "../brand/icons.jsx";
 import SheetPreview from "./SheetPreview.jsx";
@@ -1070,6 +1071,7 @@ export default function PlanNavigator({
           <div style={{ padding: 48, textAlign: "center", color: "var(--ink-muted)", fontSize: 13.5, lineHeight: 1.7 }}>
             {!sheets.length ? (
               <div style={{ maxWidth: 560, margin: "0 auto" }}>
+                <OrkestroLogo />
                 <div style={{ fontFamily: "var(--f-mono)", fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--cobalt)", marginBottom: 6 }}>People &amp; agents · one engine</div>
                 <div style={{ fontFamily: "var(--f-display)", fontSize: 18, color: "var(--ink)", lineHeight: 1.32, marginBottom: 5 }}>Measure a plan by hand — or point an AI&nbsp;agent at the same engine.</div>
                 <div style={{ fontSize: 13, color: "var(--ink-muted)", lineHeight: 1.55, marginBottom: 20 }}>Every measurement keeps its scale and how it was made — a person, one click, or an agent.</div>
