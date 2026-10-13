@@ -162,6 +162,7 @@ import WorkspacePanel from "../components/WorkspacePanel.jsx";
 import PremiumInterest from "../components/PremiumInterest.jsx";
 import { shouldAutoPromptPremium, readPremiumPrompt } from "../lib/premiumInterest.js";
 import "../styles/premiumWorkspace.css";
+import "../styles/orkestro.css"; // Orkestro brand layer: keep after premiumWorkspace.css
 import { WorkspaceChrome, WorkspaceNavigator, WorkspaceCommandMenu } from "../components/WorkspaceChrome.jsx";
 import { useWorkspaceLayout, WorkspaceLayoutDialog, DockHandle, DockTargets } from "../components/WorkspaceLayout.jsx";
 import AiSettings from "../components/AiSettings.jsx";
@@ -218,6 +219,9 @@ import { oneClickEnabled, ONE_CLICK_GATE_MESSAGE, commandBoxEnabled, ocrEnabled 
 import { computeShapeMetrics, needsMetrics, recalibrateShapes, linearVerticalFt } from "../lib/shapeMetrics.js";
 import { fmtCheckLen, parseLenInput, checkVerdict, M_PER_FT, areaVal, areaUnit, lenVal, lenUnit, calInputToFeet, heightVal, heightUnit, heightInputToFeet, heightStep, dimInputStr, dimLabel, volVal, volUnit } from "../lib/units";
 import * as panelGeom from "../lib/panelGeometry.js";
+// Orkestro fork: the upstream "Request Premium" list is a Netlify form owned by
+// the upstream project, so its auto-prompt is off in this build.
+const ORKESTRO_PREMIUM_PROMPT = false;
 
 // Carpet roll width — a run reaching this needs a seam. The live cursor readout
 // turns amber at/past it so the estimator sees where seams fall while tracing.
@@ -1829,7 +1833,7 @@ export default function TakeoffCanvas() {
     catch (e) { setCommitMsg(`Couldn't read those files: ${e.message || e}`); return; }
     if (!pdfs.length) {
       setCommitMsg(skipped.length
-        ? `Nothing to open — ${skipped.length} file${skipped.length === 1 ? "" : "s"} skipped. OpenTakeoff reads PDFs, images, and .zip plan sets.`
+        ? `Nothing to open — ${skipped.length} file${skipped.length === 1 ? "" : "s"} skipped. Orkestro Takeoff reads PDFs, images, and .zip plan sets.`
         : "No supported files found. Drop a PDF, an image, or a .zip plan set.");
       return;
     }
@@ -3007,7 +3011,7 @@ export default function TakeoffCanvas() {
       await backupProfileFile();
       await resetProfileDefaults();
       await refreshLibraries();
-      setCommitMsg("Profile reset to OpenTakeoff defaults — your previous setup downloaded as opentakeoff-profile-backup.otprofile (Import profile restores it). Project takeoffs are untouched.");
+      setCommitMsg("Profile reset to Orkestro Takeoff defaults — your previous setup downloaded as opentakeoff-profile-backup.otprofile (Import profile restores it). Project takeoffs are untouched.");
     } catch (e) { setCommitMsg(`Couldn't reset profile: ${e?.message || e}`); }
   };
 
@@ -8591,7 +8595,7 @@ export default function TakeoffCanvas() {
   });
   sheetMenuItems.push({
     id: "reset-profile", icon: "undo", label: "Reset profile to defaults",
-    title: "Back to a stock OpenTakeoff setup — empty template/material libraries, the default stamps, no report customization. Your current setup downloads as a backup first; project takeoffs are untouched.",
+    title: "Back to a stock Orkestro Takeoff setup — empty template/material libraries, the default stamps, no report customization. Your current setup downloads as a backup first; project takeoffs are untouched.",
     onSelect: resetProfile,
   });
 
@@ -8731,7 +8735,7 @@ export default function TakeoffCanvas() {
     { id: "paste", label: "Paste", group: "Edit", shortcut: "⌘V", disabled: !clipRef.current.length, run: () => pasteClipboard() },
     { id: "report", label: "Open report", group: "Workspace", run: () => setShowReport(true) },
     { id: "tour", label: "Guided first takeoff — learn it on the sample plan", group: "Help", run: startTour },
-    { id: "guide", label: "How OpenTakeoff works — shortcuts and the five-minute path", group: "Help", shortcut: "?", run: () => setGuideOpen(true) },
+    { id: "guide", label: "How Orkestro Takeoff works — shortcuts and the five-minute path", group: "Help", shortcut: "?", run: () => setGuideOpen(true) },
     { id: "connect-ai", label: "Connect your AI — Claude, Codex, Cursor", group: "Help", run: () => setConnectOpen(true) },
     { id: "work", label: "Open work and review", group: "Workspace", run: () => setAgentOpen(true) },
     { id: "layout", label: "Arrange and save your layout", group: "Workspace", run: () => setWorkspaceLayoutOpen(true) },
@@ -8824,9 +8828,9 @@ export default function TakeoffCanvas() {
           {panelBtn(() => setShowRevisions(true), "revisions", "Revisions — save the takeoff at each bid revision, compare what moved", showRevisions)}
         </div>}
         layoutMenu={<button type="button" onClick={() => setWorkspaceLayoutOpen(true)} title="Arrange panels, lock positions, and save layouts"><Icon name="sliders" size={16} />Layout</button>}
-        helpMenu={<ToolMenu title="Learn OpenTakeoff, or connect an AI agent" face={<span>Help</span>} onOpenChange={onMenuDepth} items={[
+        helpMenu={<ToolMenu title="Learn Orkestro Takeoff, or connect an AI agent" face={<span>Help</span>} onOpenChange={onMenuDepth} items={[
           { id: "tour", label: "Guided first takeoff", onSelect: startTour },
-          { id: "guide", label: "How OpenTakeoff works", shortcut: "?", onSelect: () => setGuideOpen(true) },
+          { id: "guide", label: "How Orkestro Takeoff works", shortcut: "?", onSelect: () => setGuideOpen(true) },
           { id: "connect-ai", label: "Connect your AI", onSelect: () => setConnectOpen(true) },
         ]} />}
         fileMenu={<><ToolMenu title="Files and workspace" face={<span>File</span>} onOpenChange={onMenuDepth} items={sheetMenuItems} /><PresenceChip bridge={store.syncBridge} /><AccountChip note={cloudMode ? "Synced to Google Drive" : "Local workspace"} onOpenChange={onMenuDepth} /></>}
@@ -8851,7 +8855,7 @@ export default function TakeoffCanvas() {
             and nothing important is ever past the right edge. paddingTop 16
             keeps the cluster captions (top:-13) inside the scroll box. */}
         <div data-topbar-scroll style={{ display: "flex", gap: 7, alignItems: "center", flex: "1 1 0", minWidth: 0, padding: "16px 0 0", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "thin", overscrollBehaviorX: "contain" }}>
-        <strong style={{ fontFamily: "var(--f-display)", fontSize: 15, color: "var(--ink)", letterSpacing: "-0.02em" }}>open<span style={{ fontStyle: "italic", color: "var(--cobalt)" }}>takeoff</span></strong>
+        <strong style={{ fontFamily: "var(--f-display)", fontSize: 15, color: "var(--ink)", letterSpacing: "-0.02em" }}>orkestro<span style={{ fontStyle: "italic", color: "var(--cobalt)" }}> takeoff</span></strong>
         <button type="button" onClick={() => fileInputRef.current?.click()} title="Open plans — PDF, image, or a .zip plan set (or just drag them onto the canvas)"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", border: "1px solid var(--ink)", background: "var(--ink)", color: "var(--paper-bright)", cursor: "pointer", fontWeight: 600, fontSize: 12.5, lineHeight: 1 }}>
           <Icon name="plus" size={14} />Open</button>
@@ -9034,9 +9038,8 @@ export default function TakeoffCanvas() {
           onOpenChange={onMenuDepth}
           face={<span style={{ fontWeight: 700, letterSpacing: "0.08em" }}>⋯</span>}
           items={[
-            { id: "premium-interest", label: "Request Premium — join the early-access list", highlight: true, onSelect: () => setPremiumOpen(true) },
             { id: "workspace-preview", label: workspaceLayout ? "Classic layout" : "Premium layout — compact controls", onSelect: () => workspacePrefs.setEnabled(!workspaceLayout) },
-            { id: "guide", label: "How OpenTakeoff works", shortcut: "?", onSelect: () => setGuideOpen(true) },
+            { id: "guide", label: "How Orkestro Takeoff works", shortcut: "?", onSelect: () => setGuideOpen(true) },
             { id: "tour", label: "Guided first takeoff", onSelect: startTour },
             { id: "connect-ai", label: "Connect your AI", onSelect: () => setConnectOpen(true) },
             { id: "theme", label: theme === "dark" ? "Light chrome" : "Dark chrome", onSelect: toggleTheme },
@@ -11111,7 +11114,7 @@ export default function TakeoffCanvas() {
           sheetLabel={(k) => tabLabel(k)}
           sheetDims={(k) => panelByKey(k)?.img}
           onMarkedSet={exportMarkedSet} markedSetDark={darkMode}
-          onClose={() => { setShowReport(false); if (!premiumPrompted.current && shouldAutoPromptPremium(readPremiumPrompt(), shapes.length)) { premiumPrompted.current = true; setPremiumOpen(true); } }}
+          onClose={() => { setShowReport(false); if (ORKESTRO_PREMIUM_PROMPT && !premiumPrompted.current && shouldAutoPromptPremium(readPremiumPrompt(), shapes.length)) { premiumPrompted.current = true; setPremiumOpen(true); } }}
         />
       )}
 
