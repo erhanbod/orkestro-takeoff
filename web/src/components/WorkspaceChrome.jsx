@@ -10,7 +10,7 @@ export function WorkspaceChrome({ title, onOpen, onNavigate, navigationOpen, onT
   onControls, controlsOpen, onSearch, pinControl, panelTools, layoutMenu, helpMenu, fileMenu, scaleMenu, conditionControl, aids, history, action }) {
   return <>
     <header className="calm-header">
-      <strong className="calm-brand">open<span>takeoff</span></strong>
+      <strong className="calm-brand">orkestro<span> takeoff</span></strong>
       <div className="calm-project" title={title}><span>{title || "Untitled workspace"}</span><small>Premium workspace</small></div>
       <div className="calm-header-actions">
         <button type="button" onClick={onOpen} title="Open plans"><Icon name="plus" size={16} /><span>Open</span></button>

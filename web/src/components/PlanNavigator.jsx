@@ -18,6 +18,7 @@
 // shortcuts in EVERY mode via a capture-phase listener — shortcut suppression is
 // keyed on "is this mounted", never on the canvas' view/mode staying in sync.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SOURCE_URL, UPSTREAM_URL } from "../brand/orkestro.js";
 import { Link, useNavigate } from "react-router";
 import { Icon } from "../brand/icons.jsx";
 import SheetPreview from "./SheetPreview.jsx";
@@ -1179,8 +1180,10 @@ export default function PlanNavigator({
                   </div>
                 )}
                 <div style={{ marginTop: 30, fontFamily: "var(--f-mono)", fontSize: 10.5, letterSpacing: "0.1em", color: "var(--text-faint)" }}>
-                  AGPL-3.0 open source · an open project by{" "}
-                  <a href="https://kentucky-ai.com" target="_blank" rel="noopener" style={{ color: "var(--ink-muted)" }}>Kentucky&nbsp;AI</a>
+                  Orkestro Takeoff · built on{" "}
+                  <a href={UPSTREAM_URL} target="_blank" rel="noopener" style={{ color: "var(--ink-muted)" }}>OpenTakeoff</a>
+                  {" "}· AGPL-3.0 ·{" "}
+                  <a href={SOURCE_URL} target="_blank" rel="noopener" style={{ color: "var(--ink-muted)" }}>Source</a>
                 </div>
               </div>
             ) : enumerated ? (

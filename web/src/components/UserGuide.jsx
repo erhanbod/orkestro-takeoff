@@ -146,7 +146,7 @@ export default function UserGuide({ onClose, onTour, onConnect }) {
         onKeyDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="OpenTakeoff user guide"
+        aria-label="Orkestro Takeoff user guide"
         className="panel"
         style={{
           width: "min(760px, 100%)", background: "var(--paper-bright)", color: "var(--ink)",
@@ -154,7 +154,7 @@ export default function UserGuide({ onClose, onTour, onConnect }) {
           boxShadow: "var(--shadow-2)",
         }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
-          <strong style={{ fontFamily: "var(--f-display)", fontSize: 17, letterSpacing: "-0.02em" }}>How OpenTakeoff works</strong>
+          <strong style={{ fontFamily: "var(--f-display)", fontSize: 17, letterSpacing: "-0.02em" }}>How Orkestro Takeoff works</strong>
           <button onClick={onClose} title="Close (Esc)"
             style={{ background: "none", border: "none", color: "var(--ink-soft)", fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 4 }}>×</button>
         </div>
@@ -202,7 +202,7 @@ export default function UserGuide({ onClose, onTour, onConnect }) {
 
         <div style={{ borderTop: "1px solid var(--ink-faint)", paddingTop: 14, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.5 }}>
           This is the short version. The full manual covers conditions, markups and RFIs, revisions,
-          the report and exports, the Agent panel, and driving OpenTakeoff from an AI agent over MCP —{" "}
+          the report and exports, the Agent panel, and driving Orkestro Takeoff from an AI agent over MCP —{" "}
           <a href={GUIDE_URL} target="_blank" rel="noreferrer" style={{ color: "var(--cobalt)" }}>read the complete guide</a>.
         </div>
       </div>
