@@ -497,7 +497,7 @@ export default function TakeoffCanvas() {
   // ONLY: all stored takeoff math stays feet (lib/units contract), so toggling
   // never rewrites a shape, a scale, or a coverage rate. Browser default via
   // localStorage; a project that saved a units field overrides on hydrate.
-  const [units, setUnits] = useState(() => { try { return localStorage.getItem("opentakeoff_units") === "metric" ? "metric" : "imperial"; } catch { return "imperial"; } });
+  const [units, setUnits] = useState(() => { try { return localStorage.getItem("opentakeoff_units") === "imperial" ? "imperial" : "metric"; } catch { return "metric"; } });
   useEffect(() => { try { localStorage.setItem("opentakeoff_units", units); } catch { /* private mode */ } }, [units]);
   const [check, setCheck] = useState([]);             // Check tool: 0–2 stage-px points along a printed dimension
   const [checkStated, setCheckStated] = useState(""); // what the drawing says that dimension is
