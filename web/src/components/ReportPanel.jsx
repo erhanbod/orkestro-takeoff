@@ -813,7 +813,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
         {rows.length > 0 && (
           <p style={{ maxWidth: 980, margin: "14px auto 0", fontSize: 11.5, color: "var(--ink-muted)", lineHeight: 1.6 }}>
             <strong>{AU} w/Waste</strong> = measured quantity × waste %. Waste is set per condition in the canvas. Wall {AU} comes from Surface-Area
-            traces (run × height); Border {AU} from Linear runs with a thickness.{M ? " Supporting-material coverage rates stay as entered (SF/LF-based)." : ""}
+            traces (run × height); Border {AU} from Linear runs with a thickness.{M ? " Supporting-material coverage rates are entered per m² / m in metric." : ""}
             {tableCols.some((c) => c.key === "perimeter_ref") && (
               <> Perim {LU} (ref) sums floor-trace perimeters — includes door openings and shared walls; reference only, never totaled or waste-adjusted.</>
             )}
@@ -937,7 +937,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
                   </span>{" "}
                 </React.Fragment>
               ))}
-              <br />Each quantity = measured {`{area / linear / count}`} ÷ your coverage rate, rounded up to whole units.
+              <br />Each quantity = measured {`{area / linear / count}`} ÷ your coverage rate, rounded up to whole units. Lines marked “+ waste” use the waste-adjusted quantity.
             </p>
           </div>
         )}
