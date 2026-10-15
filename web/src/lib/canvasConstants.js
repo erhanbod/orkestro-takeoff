@@ -6,6 +6,7 @@
 // defaults from lib/coverage.js, so the CT-1 seed and the editor can't drift.)
 
 import { GROUT_DEFAULTS } from "./coverage.js";
+import { M2_PER_SF, M_PER_FT } from "./units";
 
 export const MIN_SCALE = 0.03;
 export const MAX_SCALE = 32;  // stage zoom is in raster px — with the 28MP base budget this keeps ≈ the old deep-zoom ceiling (detail view carries the crispness)
@@ -111,29 +112,52 @@ export const HL_SIZES = [["F", 8], ["M", 14], ["B", 22]];   // screen px at draw
 // vendor-neutral, generic rates; always verify against the product data sheet.
 // Expressed in TEMPLATE shape (finish_tag/waste_pct/materials, no fill — it
 // defaults from color) so seeding and the Library run the same constructor.
+// Orkestro (AU) seeds: metric purchase units. `per` stays stored against the
+// internal basis (SF / LF per unit), so the AU rates are written in m² / m and
+// converted here. Lines marked incl_waste are the finish itself (boxes, lengths)
+// and order off the waste-adjusted quantity; sundries (adhesive) do not.
+// Rates are generic starting points; set them from the product data sheet.
+const M2 = (v) => v / M2_PER_SF;   // m² per unit → SF per unit
+const LM = (v) => v / M_PER_FT;    // m per unit  → LF per unit
 export const FLOORING_DEFAULTS = [
-  { finish_tag: "CPT-1", color: "#2f7d54", hatch: "speckle", waste_pct: 5,  materials: [{ name: "Adhesive", kind: "adhesive", per: 250, basis: "area", unit: "gal" }] },                  // Carpet tile
-  { finish_tag: "BRD-1", color: "#be185d", hatch: "dots",    waste_pct: 10, materials: [{ name: "Adhesive", kind: "adhesive", per: 120, basis: "area", unit: "gal" }] },                  // Broadloom carpet (roll goods)
-  { finish_tag: "LVT-1", color: "#b8860b", hatch: "plank",   waste_pct: 8,  materials: [{ name: "Adhesive", kind: "adhesive", per: 250, basis: "area", unit: "gal" }] },                  // Luxury vinyl plank/tile
-  { finish_tag: "WD-1",  color: "#9a3412", hatch: "plank",   waste_pct: 10, materials: [                                                                                                  // Unfinished 2.25″ solid red oak — glue-down + site-finished
-    { name: "Adhesive (wood, SMP)",     kind: "adhesive", per: 50,  basis: "area", unit: "gal", note: "1/4″×1/4″ V (wood)" },
-    { name: "Sealer (primer coat)",     per: 400, basis: "area", unit: "gal", note: "1 prime coat (~10 m²/L)" },
-    { name: "Polyurethane (2K finish)", per: 136, basis: "area", unit: "gal", note: "≈3 coats @ ~408 SF/gal/coat (2K 10:1)" },
+  { finish_tag: "CPT-1", color: "#2f7d54", hatch: "speckle", waste_pct: 5,  materials: [                                                                                                  // Carpet tile
+    { name: "Carpet tiles", per: M2(5), basis: "area", unit: "box", incl_waste: true, note: "20 × 500×500 tiles" },
+    { name: "Tackifier adhesive", kind: "adhesive", per: M2(6), basis: "area", unit: "L" },
   ] },
-  { finish_tag: "VCT-1", color: "#2563eb", hatch: "checker", waste_pct: 5,  materials: [{ name: "Adhesive", kind: "adhesive", per: 350, basis: "area", unit: "gal" }] },                  // Vinyl composition tile
+  { finish_tag: "BRD-1", color: "#be185d", hatch: "dots",    waste_pct: 10, materials: [{ name: "Adhesive", kind: "adhesive", per: M2(4), basis: "area", unit: "L" }] },               // Broadloom carpet (roll goods)
+  { finish_tag: "LVT-1", color: "#b8860b", hatch: "plank",   waste_pct: 8,  materials: [                                                                                                  // Luxury vinyl plank/tile
+    { name: "LVT planks", per: M2(2.2), basis: "area", unit: "box", incl_waste: true },
+    { name: "Adhesive", kind: "adhesive", per: M2(4), basis: "area", unit: "L" },
+  ] },
+  { finish_tag: "WD-1",  color: "#9a3412", hatch: "plank",   waste_pct: 10, materials: [                                                                                                  // Solid timber — glue-down + site-finished
+    { name: "Timber flooring", per: M2(1.5), basis: "area", unit: "pack", incl_waste: true },
+    { name: "Adhesive (wood, SMP)",     kind: "adhesive", per: M2(1.2), basis: "area", unit: "L", note: "6 mm V-notch" },
+    { name: "Sealer (primer coat)",     per: M2(10), basis: "area", unit: "L", note: "1 prime coat" },
+    { name: "Polyurethane (2K finish)", per: M2(3.3), basis: "area", unit: "L", note: "≈3 coats" },
+  ] },
+  { finish_tag: "VCT-1", color: "#2563eb", hatch: "checker", waste_pct: 5,  materials: [                                                                                                  // Vinyl composition tile
+    { name: "Vinyl tiles", per: M2(4.2), basis: "area", unit: "box", incl_waste: true },
+    { name: "Adhesive", kind: "adhesive", per: M2(8.5), basis: "area", unit: "L" },
+  ] },
   { finish_tag: "SV-1",  color: "#0d9488", hatch: "solid",   waste_pct: 10, materials: [                                                                                                  // Sheet vinyl
-    { name: "Adhesive", kind: "adhesive", per: 150, basis: "area", unit: "gal" },
+    { name: "Adhesive", kind: "adhesive", per: M2(3.7), basis: "area", unit: "L" },
     // Seam welding is figured off the ROLL LAYOUT, never off a share of the
     // perimeter: basis "seam_lf" is the length where two cuts meet on the
     // floor (lib/rollgoods.js seamLfBySrc). It reads 0 until the condition
     // carries a roll setup — which is the honest answer, since nothing has
     // decided yet how the sheet gets cut.
-    { name: "Heat-weld rod", per: 1, basis: "seam_lf", unit: "lf", note: "runs the figured seams — set the roll width on this condition" },
+    { name: "Heat-weld rod", per: LM(1), basis: "seam_lf", unit: "m", round: false, note: "runs the figured seams — set the roll width on this condition" },
   ] },
   { finish_tag: "CT-1",  color: "#9333ea", hatch: "grid",    waste_pct: 10, materials: [                                                                                                  // Ceramic / porcelain tile
+    { name: "Tiles", per: M2(1.44), basis: "area", unit: "box", incl_waste: true, note: "600×600, 4 per box" },
     { name: "Thinset mortar", kind: "mortar", per: 65, basis: "area", unit: "bag", note: '1/4″×3/8″×1/4″ sq' },
     { name: "Grout", kind: "grout", per: 512, basis: "area", unit: "bag", grout: { ...GROUT_DEFAULTS }, note: '12×24×3/8″ @ 1/8″ · 25 lb' },
   ] },
-  { finish_tag: "RB-1",  color: "#475569", hatch: "horiz",   waste_pct: 5,  materials: [{ name: "Cove base adhesive", kind: "adhesive", per: 40, basis: "linear", unit: "tube" }] },      // Rubber / resilient wall base (linear)
-  { finish_tag: "TR-1",  color: "#c96442", hatch: "vert",    waste_pct: 0,  materials: [] },                                                                                              // Transitions / reducers (linear)
+  { finish_tag: "RB-1",  color: "#475569", hatch: "horiz",   waste_pct: 5,  materials: [                                                                                                  // Rubber / resilient skirting (linear)
+    { name: "Skirting", per: LM(2.4), basis: "linear", unit: "length", incl_waste: true, note: "2.4 m lengths" },
+    { name: "Skirting adhesive", kind: "adhesive", per: LM(12), basis: "linear", unit: "tube" },
+  ] },
+  { finish_tag: "TR-1",  color: "#c96442", hatch: "vert",    waste_pct: 0,  materials: [                                                                                                  // Transitions / reducers (linear)
+    { name: "Transition strip", per: LM(2.7), basis: "linear", unit: "length", incl_waste: true, note: "2.7 m lengths" },
+  ] },
 ];

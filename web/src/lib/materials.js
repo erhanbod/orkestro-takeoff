@@ -34,6 +34,7 @@ export const libFields = (lm) => ({
   name: lm.name || "", unit: lm.unit || "", per: lm.per || 0, basis: lm.basis || "area",
   round: lm.round !== false, note: lm.note || "",
   ...(lm.kind ? { kind: lm.kind } : {}),
+  ...(lm.incl_waste ? { incl_waste: true } : {}),
   ...(lm.grout ? { grout: { ...lm.grout } } : {}),
 });
 
@@ -46,6 +47,7 @@ export const matFieldOverridden = (m, lm, f) => {
   const L = libFields(lm);
   if (f === "per") return (Number(m.per) || 0) !== L.per;
   if (f === "round") return (m.round !== false) !== L.round;
+  if (f === "incl_waste") return !!m.incl_waste !== !!L.incl_waste;
   if (f === "basis") return (m.basis || "area") !== L.basis;   // absent basis means "area" everywhere else — don't flag it
   if (f === "grout") return !groutParamsEqual(m.grout, L.grout);
   return String(m[f] || "") !== String(L[f] || "");
@@ -68,6 +70,7 @@ export const libPushPatch = (m, lm) => {
   const next = { ...m, ...libFields(lm) };
   if (!lm.grout) delete next.grout;
   if (!lm.kind) delete next.kind;
+  if (!lm.incl_waste) delete next.incl_waste;
   return next;
 };
 // Per-field ↺. `kind` is name-coupled metadata on a geometry-less line (it's

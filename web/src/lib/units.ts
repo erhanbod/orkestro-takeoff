@@ -160,3 +160,35 @@ export function checkVerdict(errPct: number): { shown: number; grade: "match" | 
   const a = Math.abs(shown);
   return { shown, grade: a <= 1 ? "match" : a <= 5 ? "close" : "wrong" };
 }
+
+// ── supporting-material coverage rates ───────────────────────────────────────
+// A material line's `per` is stored against the internal basis (SF per unit on
+// an area line, LF per unit on a linear/seam line, EA per unit on a count line)
+// so totals stay in feet like everything else. Metric users read and type it as
+// m² per unit / m per unit; these convert at the input edge only.
+const PER_FACTOR = (basis: string | undefined, units: UnitSystem): number => {
+  if (units !== "metric") return 1;
+  const b = basis || "area";
+  if (b === "area") return M2_PER_SF;
+  if (b === "linear" || b === "seam_lf") return M_PER_FT;
+  return 1;
+};
+/** stored coverage → display coverage (SF/unit → m²/unit, LF/unit → m/unit) */
+export const perToDisplay = (per: number, basis: string | undefined, units: UnitSystem): number => {
+  const v = (Number(per) || 0) * PER_FACTOR(basis, units);
+  return Math.round(v * 1000) / 1000;
+};
+/** typed display coverage → stored coverage */
+export const perFromDisplay = (v: number, basis: string | undefined, units: UnitSystem): number =>
+  Math.max(0, (Number(v) || 0) / PER_FACTOR(basis, units));
+/** the basis dropdown labels for a unit system */
+export const basisLabels = (units: UnitSystem): Record<string, string> => units === "metric"
+  ? { area: "floor m²", linear: "linear m", count: "each", seam_lf: "seam m" }
+  : { area: "floor SF", linear: "linear LF", count: "each", seam_lf: "seam LF" };
+/** the per-unit suffix shown on presets ("SF" / "m²", "LF" / "m") */
+export const basisUnit = (basis: string | undefined, units: UnitSystem): string => {
+  const b = basis || "area";
+  if (b === "area") return units === "metric" ? "m²" : "SF";
+  if (b === "linear" || b === "seam_lf") return units === "metric" ? "m" : "LF";
+  return "EA";
+};
