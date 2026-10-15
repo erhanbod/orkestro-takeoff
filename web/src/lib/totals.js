@@ -86,10 +86,15 @@ export function conditionTotals(conditions, shapes, ctx = null) {
     // seam tape). Coverage comes off the product data sheet.
     const materials = (c.materials || []).filter((m) => m && m.name).map((m) => {
       const per = Math.max(0, Number(m.per) || 0);
-      const basisVal = m.basis === "linear" ? lf : m.basis === "count" ? ea : m.basis === "seam_lf" ? seam : total;
+      let basisVal = m.basis === "linear" ? lf : m.basis === "count" ? ea : m.basis === "seam_lf" ? seam : total;
+      // incl_waste: the line IS the finish itself (boxes of tile, rolls, 2.4 m
+      // lengths of skirting), so it is ordered off the waste-adjusted quantity
+      // like the w/Waste columns. Never on EA — waste is never applied to counts.
+      const inclWaste = !!m.incl_waste && m.basis !== "count";
+      if (inclWaste) basisVal *= w;
       let qty = per > 0 ? basisVal / per : 0;
       qty = m.round === false ? round2(qty) : Math.ceil(qty - 1e-9);
-      return { name: m.name, unit: m.unit || "", per, basis: m.basis || "area", round: m.round !== false, note: m.note || "", basis_qty: round2(basisVal), qty };
+      return { name: m.name, unit: m.unit || "", per, basis: m.basis || "area", round: m.round !== false, note: m.note || "", ...(inclWaste ? { incl_waste: true } : {}), basis_qty: round2(basisVal), qty };
     });
     return {
       id: c.id, finish_tag: c.finish_tag, color: c.color, fill: c.fill, hatch: c.hatch,

@@ -30,6 +30,7 @@ import { Icon } from "../brand/icons.jsx";
 import { attrValue, columnLabel } from "../lib/conditionColumns.js";
 import { SPEC_FIELDS } from "../lib/reportColumns.js";
 import { num } from "../lib/num.js";
+import { perToDisplay, perFromDisplay, basisLabels, basisUnit } from "../lib/units";
 import { areaVal, areaUnit, lenVal, lenUnit, heightUnit, heightInputToFeet, heightStep, thickUnit, thickInputToInches, thickStep, dimInputStr } from "../lib/units";
 import { HATCHES, PALETTE, NO_FILL, HatchSwatch } from "./hatches.jsx";
 import { LINE_STYLES, LINE_STYLE_IDS } from "../lib/lineStyles.js";
@@ -166,10 +167,44 @@ function LibDraftInput({ name, value, number, placeholder, width, onCommitText }
   );
 }
 
+// Coverage rate input. Stored `per` is against the internal basis (SF / LF per
+// unit); metric shows and takes m² / m per unit. Draft-buffered so a converted,
+// rounded display value can't fight the keystrokes mid-edit.
+function CoverageInput({ name, material: m, units = "imperial", width = 66, style, onCommit }) {
+  const [draft, setDraft] = useState(null);
+  const shown = m.per ? String(perToDisplay(m.per, m.basis, units)) : "";
+  const commit = () => {
+    if (draft != null) {
+      const v = parseFloat(draft);
+      onCommit(Number.isFinite(v) && v > 0 ? perFromDisplay(v, m.basis, units) : 0);
+    }
+    setDraft(null);
+  };
+  return (
+    <input name={name} type="number" min="0" step="any" value={draft ?? shown}
+      onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+      onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) e.currentTarget.blur(); }}
+      title={`Coverage: ${basisUnit(m.basis, units)} per ${m.unit || "unit"} (off the product data sheet)`}
+      placeholder="0" style={{ ...ip, width, ...(style || {}) }} />
+  );
+}
+
+// "+ waste" — order this line off the waste-adjusted quantity. For the finish
+// itself (boxes of tile, rolls, lengths of skirting), not for the sundries.
+function InclWasteToggle({ name, material: m, onChange, warn = false }) {
+  if ((m.basis || "area") === "count") return null;
+  return (
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 4, color: warn ? "var(--c-warning)" : "var(--ink-muted)" }}
+      title="Include the condition's waste % — tick this for the finish itself (boxes, rolls, lengths), leave it off for sundries like adhesive">
+      <input name={name} type="checkbox" checked={!!m.incl_waste} onChange={(e) => onChange(e.target.checked)} />+ waste
+    </label>
+  );
+}
+
 // Coverage preset picker — shared by the condition-line editor and the
 // Materials tab so a library "Adhesive" and an attached line offer the same
 // notch/roller list. Renders nothing when the kind has no preset table.
-function CoveragePresetSelect({ material: m, onPick }) {
+function CoveragePresetSelect({ material: m, onPick, units = "imperial" }) {
   const presets = (m.basis || "area") === "area" ? MATERIAL_PRESETS[materialKind(m)] : undefined;
   if (!presets) return null;
   return (
@@ -178,7 +213,7 @@ function CoveragePresetSelect({ material: m, onPick }) {
       title="Coverage preset — trowel notch / spread rate. Generic industry-typical values; verify against the product data sheet."
       style={{ ...ip, background: "var(--paper-bright)" }}>
       <option value="">preset…</option>
-      {presets.map((t) => <option key={t.label} value={t.label}>{t.label} · {t.per} SF/{m.unit || "unit"}</option>)}
+      {presets.map((t) => <option key={t.label} value={t.label}>{t.label} · {perToDisplay(t.per, m.basis, units)} {basisUnit(m.basis, units)}/{m.unit || "unit"}</option>)}
     </select>
   );
 }
@@ -186,7 +221,8 @@ function CoveragePresetSelect({ material: m, onPick }) {
 // Editable supporting-materials rows for a condition (coverage-derived order qty).
 function MaterialsEditor({ materials, onAdd, onUpdate, onRemove, library, libById, overridden, onRevert, onAttach, onPromote,
     twin = false, parentTag = "", dropped = [], parentRows = [], onFollowFamilyRow, onRestoreDroppedRow,
-    heightFt = 0 }) {
+    heightFt = 0, units = "imperial" }) {
+  const BL = basisLabels(units);
   // library link affordances (#47, all optional so the editor works standalone):
   // linked lines show ⛓; a field differing from its library entry tints amber
   // and grows a per-field ↺ revert; unlinked lines can be promoted to the library
@@ -240,20 +276,22 @@ function MaterialsEditor({ materials, onAdd, onUpdate, onRemove, library, libByI
             <input name="material-unit" value={m.unit} onChange={(e) => onUpdate(m.id, { unit: e.target.value })} placeholder="unit" style={{ ...ip, width: 60, ...(ov("unit") ? { border: OV } : {}) }} />
             {ov("unit") && rv(m, "unit")}
             <span style={{ color: "var(--ink-muted)" }}>per</span>
-            <input name="material-per" type="number" min="0" step="any" value={m.per || ""} onChange={(e) => onUpdate(m.id, { per: Math.max(0, parseFloat(e.target.value) || 0) })} placeholder="0" style={{ ...ip, width: 66, ...(ov("per") ? { border: OV } : {}) }} />
+            <CoverageInput name="material-per" material={m} units={units} style={ov("per") ? { border: OV } : undefined} onCommit={(per) => onUpdate(m.id, { per })} />
             {ov("per") && rv(m, "per")}
             <select name="material-basis" value={m.basis || "area"} onChange={(e) => onUpdate(m.id, { basis: e.target.value })} style={{ ...ip, background: "var(--paper-bright)", ...(ov("basis") ? { border: OV } : {}) }}>
-              <option value="area">floor SF</option>
-              <option value="linear">linear LF</option>
-              <option value="count">each</option>
-              <option value="seam_lf" title="Figured seam length from the roll layout — 0 until this condition carries a roll setup">seam LF</option>
+              <option value="area">{BL.area}</option>
+              <option value="linear">{BL.linear}</option>
+              <option value="count">{BL.count}</option>
+              <option value="seam_lf" title="Figured seam length from the roll layout — 0 until this condition carries a roll setup">{BL.seam_lf}</option>
             </select>
             {ov("basis") && rv(m, "basis")}
+            <InclWasteToggle name="material-incl-waste" material={m} warn={ov("incl_waste")} onChange={(v) => onUpdate(m.id, { incl_waste: v })} />
+            {ov("incl_waste") && rv(m, "incl_waste")}
             <label style={{ display: "inline-flex", alignItems: "center", gap: 4, color: ov("round") ? "var(--c-warning)" : "var(--ink-muted)" }} title="Round up to whole units (you buy whole buckets/bags)">
               <input name="material-round" type="checkbox" checked={m.round !== false} onChange={(e) => onUpdate(m.id, { round: e.target.checked })} />round up
             </label>
             {ov("round") && rv(m, "round")}
-            <CoveragePresetSelect material={m} onPick={(patch) => onUpdate(m.id, patch)} />
+            <CoveragePresetSelect material={m} units={units} onPick={(patch) => onUpdate(m.id, patch)} />
             <input name="material-note" value={m.note || ""} onChange={(e) => onUpdate(m.id, { note: e.target.value })} placeholder="note (coats, trowel…)" style={{ ...ip, width: 150, ...(ov("note") ? { border: OV } : {}) }} />
             {ov("note") && rv(m, "note")}
             {!lm && onPromote && (
@@ -1179,7 +1217,7 @@ function TakeoffsPanel({
               twin={!!c.variant_of} parentTag={(conditions.find((x) => x.id === c.variant_of) || {}).finish_tag || ""}
               dropped={c.materials_dropped || []} parentRows={(conditions.find((x) => x.id === c.variant_of) || {}).materials || []}
               onFollowFamilyRow={onFollowFamilyRow} onRestoreDroppedRow={onRestoreDroppedRow}
-              heightFt={c.height_ft} />
+              heightFt={c.height_ft} units={units} />
             {/* Duplicate, inline — deliberately NOT a window.prompt: those freeze a
                 CDP/automation-driven session dead, and this panel is scripted in demos. */}
             {onDuplicateCondition && (twinDraft.id === c.id ? (
@@ -1367,18 +1405,19 @@ function TakeoffsPanel({
                     <span style={{ color: "var(--ink-muted)" }}>1</span>
                     <input name="library-material-unit" value={lm.unit} onChange={(e) => onUpdateLibMaterial(lm.id, { unit: e.target.value })} placeholder="unit" style={{ ...ip, width: 54 }} />
                     <span style={{ color: "var(--ink-muted)" }}>per</span>
-                    <LibDraftInput name="library-material-per" number value={lm.per || ""} placeholder="0" width={62}
-                      onCommitText={(t) => onUpdateLibMaterial(lm.id, { per: Math.max(0, parseFloat(t) || 0) })} />
+                    <CoverageInput name="library-material-per" material={lm} units={units} width={62}
+                      onCommit={(per) => onUpdateLibMaterial(lm.id, { per })} />
                     <select name="library-material-basis" value={lm.basis || "area"} onChange={(e) => onUpdateLibMaterial(lm.id, { basis: e.target.value })} style={{ ...ip, background: "var(--paper-bright)" }}>
-                      <option value="area">floor SF</option>
-                      <option value="linear">linear LF</option>
-                      <option value="count">each</option>
-                      <option value="seam_lf" title="Figured seam length from the roll layout — 0 until the condition carries a roll setup">seam LF</option>
+                      <option value="area">{basisLabels(units).area}</option>
+                      <option value="linear">{basisLabels(units).linear}</option>
+                      <option value="count">{basisLabels(units).count}</option>
+                      <option value="seam_lf" title="Figured seam length from the roll layout — 0 until the condition carries a roll setup">{basisLabels(units).seam_lf}</option>
                     </select>
+                    <InclWasteToggle name="library-material-incl-waste" material={lm} onChange={(v) => onUpdateLibMaterial(lm.id, { incl_waste: v })} />
                     <label style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--ink-muted)" }} title="Round up to whole units">
                       <input name="library-material-round" type="checkbox" checked={lm.round !== false} onChange={(e) => onUpdateLibMaterial(lm.id, { round: e.target.checked })} />round up
                     </label>
-                    <CoveragePresetSelect material={lm} onPick={(patch) => onUpdateLibMaterial(lm.id, patch)} />
+                    <CoveragePresetSelect material={lm} units={units} onPick={(patch) => onUpdateLibMaterial(lm.id, patch)} />
                     <LibDraftInput name="library-material-note" value={lm.note || ""} placeholder="note" width={120}
                       onCommitText={(t) => onUpdateLibMaterial(lm.id, { note: t })} />
                   </div>

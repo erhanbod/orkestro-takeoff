@@ -46,6 +46,7 @@ export const TABLE_PROFILE = [
   { key: "ea",            header: "EA",         defaultVisible: true },
   { key: "waste_pct",     header: "Waste",      defaultVisible: true },
   { key: "total_sf_net",  header: "SF w/Waste", defaultVisible: true,  accent: true, foot: (g) => g.total_sf_net },
+  { key: "lf_net",        header: "LF w/Waste", defaultVisible: true,  accent: true, foot: (g) => g.lf_net },
   { key: "sy_net",        header: "SY w/Waste", defaultVisible: true,  accent: true, foot: (g) => g.sy_net },
   // grandTotals output carries all four keys the waste getters read, so the
   // TOTAL cells delegate to the same formulas as the body cells
