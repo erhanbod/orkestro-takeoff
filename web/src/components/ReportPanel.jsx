@@ -25,6 +25,7 @@ import { activeTheme, saveActiveThemeFile, clearActiveTheme } from "../lib/repor
 import { normalizeLogoToPng, loadProfiles, saveProfiles, activeProfile, updateActiveProfile, addProfile, setActiveProfile, removeProfile } from "../lib/identity.js";
 import { resolveBranding, loadBrandingSelection, saveBrandingSelection } from "../lib/branding.js";
 import { isValidAbn, formatAbn } from "../lib/abn.js";
+import { estimateRows, estimateSummary, estimateCsv, estimateCsvRows, fmtAud } from "../lib/estimate.js";
 import { projectIdFromUrl } from "../lib/store.js";
 import { describeConditionEdit, proposedConditionEditRows } from "../lib/proposals.js";
 import { qtyLabels, resolveNote } from "../lib/noteFields.ts";
@@ -90,6 +91,11 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
   // makes every seam_lf row read 0 — the honest answer before a layout exists.
   const seamCtx = useMemo(() => ({ seamByShape: seamLfByShape(rollByCond) }), [rollByCond]);
   const rows = useMemo(() => conditionTotals(conditions, shapes, seamCtx).filter((r) => r.shape_count > 0), [conditions, shapes, seamCtx]);
+  // Orkestro estimate (AUD): rates live on the conditions, settings on the project
+  const estLines = useMemo(() => estimateRows(conditions, rows), [conditions, rows]);
+  // client_info hydrates string fields only, so the settings are stored as strings
+  const estMargin = clientInfo?.estimate_margin_pct || "", estGst = clientInfo?.estimate_gst || "";
+  const estSummary = useMemo(() => estimateSummary(estLines, { margin_pct: parseFloat(estMargin) || 0, gst_registered: estGst !== "no" }), [estLines, estMargin, estGst]);
   const noteQty = useMemo(() => qtyLabels(rows, units), [rows, units]);   // {{qty}} in the annotations table (#474)
   const bySheet = useMemo(() => sheetTotals(conditions, shapes), [conditions, shapes]);
   const g = useMemo(() => grandTotals(rows), [rows]);
@@ -324,7 +330,11 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
   };
 
   const baseName = (projectName || "takeoff").replace(/[^\w.-]+/g, "_");
-  const exportCsv = () => downloadText(`${baseName}.csv`, totalsToCsv(rows, projectName, bySheet, sheetLabel, csvCols, ctx, byLabelExport.length ? byLabelExport : null, brand.brandName, units), "text/csv");
+  const exportCsv = () => {
+    const base = totalsToCsv(rows, projectName, bySheet, sheetLabel, csvCols, ctx, byLabelExport.length ? byLabelExport : null, brand.brandName, units);
+    const est = estimateCsv(estLines, estSummary);   // Orkestro: appended only when something is priced
+    downloadText(`${baseName}.csv`, est ? `${base.replace(/\n*$/, "")}\n\n${est}\n` : base, "text/csv");
+  };
   const exportJson = () => downloadText(`${baseName}.json`,
     JSON.stringify(reportJson({ projectName, rows, bySheet, scaleInfo, markups, rfis, sheetLabel, conditionColumns, attrsByCond, shapeLabels, byLabel: byLabelExport, displayUnits: units, rollGoods: rollReportRows(rollByCond, rows), proposedConditionEdits: proposedEditRows }), null, 2),
     "application/json");
@@ -335,6 +345,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
   // column picker like the CSV); buildXlsx lazy-loads fflate on first use
   const exportXlsx = async () => {
     const sheets = reportWorkbook({ rows, bySheet, shapeRows: shapesDetail(conditions, shapes, sheetLabel), cols: csvCols, ctx, sheetLabel, units, byFloorRoom });
+    if (estLines.length) sheets.splice(1, 0, { name: "Estimate", rows: estimateCsvRows(estLines, estSummary) });
     const bytes = await buildXlsx(sheets);
     downloadText(`${baseName}.xlsx`, bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   };
@@ -692,7 +703,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
             const cells = [
               ["Client", clientInfo.client_name],
               ["Reference", clientInfo.reference],
-              ["Date", clientInfo.date || new Date().toLocaleDateString()],
+              ["Date", clientInfo.date || new Date().toLocaleDateString("en-AU")],
               ["Prepared by", brand.brandName],
             ];
             return (
@@ -717,7 +728,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
             {scaleInfo.map((si) => (
               <div key={si.sheet_id}>{sheetLabel ? sheetLabel(si.sheet_id) : si.sheet_id} — {!si.scale_source || si.scale_source === "unknown" ? "scale set — provenance unrecorded" : si.scale_source}{si.scale_confirmed === false ? <span style={{ color: "var(--c-warning)", fontWeight: 700 }}> · agent-set, UNCONFIRMED</span> : null}</div>
             ))}
-            <div>Generated {new Date().toLocaleDateString()}</div>
+            <div>Generated {new Date().toLocaleDateString("en-AU")}</div>
             <div>{DISCLAIMER}</div>
           </div>
         </div>
@@ -947,6 +958,58 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
             </p>
           </div>
         )}
+        {estLines.length > 0 && (
+          <div className="report-estimate" style={{ maxWidth: 980, margin: "26px auto 0" }}>
+            <h3 style={{ fontFamily: "var(--f-display)", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink)", margin: "0 0 10px", paddingBottom: 5, borderBottom: "1.25px solid var(--ink)" }}>Estimate (AUD)</h3>
+            <table style={{ width: "100%", borderCollapse: "collapse", background: "var(--paper-bright)", border: "1px solid var(--ink-faint)" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...th, textAlign: "left" }}>Finish</th>
+                  <th style={th}>Qty w/Waste</th>
+                  <th style={th}>Supply rate</th>
+                  <th style={th}>Supply</th>
+                  <th style={th}>Labour qty</th>
+                  <th style={th}>Labour rate</th>
+                  <th style={th}>Labour</th>
+                  <th style={th}>Materials</th>
+                  <th style={th}>Total ex GST</th>
+                </tr>
+              </thead>
+              <tbody>
+                {estLines.map((l) => (
+                  <tr key={l.id}>
+                    <td style={{ ...td, textAlign: "left", fontFamily: "var(--f-mono)" }}>{l.finish_tag}</td>
+                    <td style={td}>{l.qty_net ? `${num(l.qty_net, 2)} ${l.unit}` : "—"}</td>
+                    <td style={td}>{l.supply_rate ? `${fmtAud(l.supply_rate)}/${l.unit}` : "—"}</td>
+                    <td style={td}>{l.supply ? fmtAud(l.supply) : "—"}</td>
+                    <td style={td}>{l.qty_measured ? `${num(l.qty_measured, 2)} ${l.unit}` : "—"}</td>
+                    <td style={td}>{l.labour_rate ? `${fmtAud(l.labour_rate)}/${l.unit}` : "—"}</td>
+                    <td style={td}>{l.labour ? fmtAud(l.labour) : "—"}</td>
+                    <td style={td} title={l.materials.map((m) => `${m.name}: ${m.qty} ${m.unit} × ${fmtAud(m.price)} = ${fmtAud(m.cost)}`).join("\n")}>{l.materials_cost ? fmtAud(l.materials_cost) : "—"}</td>
+                    <td style={{ ...td, fontWeight: 700 }}>{fmtAud(l.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                {[
+                  ["Subtotal", estSummary.subtotal],
+                  ...(estSummary.margin ? [[`Margin ${estSummary.margin_pct}%`, estSummary.margin]] : []),
+                  ["Total ex GST", estSummary.ex_gst],
+                  [estSummary.gst_registered ? "GST 10%" : "GST (not registered)", estSummary.gst],
+                  ["Total inc GST", estSummary.inc_gst],
+                ].map(([label, v], i, arr) => (
+                  <tr key={label} style={i === arr.length - 1 ? { borderTop: "1.25px solid var(--ink)" } : undefined}>
+                    <td colSpan={8} style={{ ...td, textAlign: "right", fontWeight: i === arr.length - 1 ? 700 : 400 }}>{label}</td>
+                    <td style={{ ...td, fontWeight: 700, color: i === arr.length - 1 ? "var(--accent, var(--ink))" : "var(--ink)" }}>{fmtAud(v)}</td>
+                  </tr>
+                ))}
+              </tfoot>
+            </table>
+            <p style={{ margin: "10px auto 0", fontSize: 11.5, color: "var(--ink-muted)", lineHeight: 1.6 }}>
+              Supply prices the waste-adjusted quantity; labour prices the measured quantity; materials are buy-list lines with a price (order qty × price). Rates are set per condition (Supporting Materials) and margin and GST in Project info. All amounts in AUD.
+            </p>
+          </div>
+        )}
         {/* subtle parent credit — clear-label mode only (default mode is already
             OpenTakeoff-branded in the masthead, so a separate credit is redundant) */}
         {brand.credit && (
@@ -1155,6 +1218,20 @@ function ProjectInfoModal({ clientInfo = {}, onClientInfo, onSaved, onClose }) {
               <span className="field-label">Date</span>
               <input name="client-date" autoComplete="off" value={clientInfo.date || ""} onChange={client("date")} placeholder={'e.g. "Tender 16/10/2026"'}
                 className="field-input" style={{ marginTop: 4 }} />
+            </label>
+          </div>
+          <div style={{ ...section, borderTop: "1px solid var(--ink-faint)", marginTop: 14, paddingTop: 12 }}>Estimate (AUD) — saved with this project</div>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+            <label style={{ ...row, flex: 1 }}>
+              <span className="field-label">Margin %</span>
+              <input name="estimate-margin" type="number" min="0" step="0.5" value={clientInfo.estimate_margin_pct || ""} placeholder="0"
+                onChange={(e) => onClientInfo && onClientInfo({ ...clientInfo, estimate_margin_pct: e.target.value })}
+                className="field-input" style={{ marginTop: 4 }} />
+            </label>
+            <label style={{ ...row, flex: 1, display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
+              <input type="checkbox" name="estimate-gst" checked={clientInfo.estimate_gst !== "no"}
+                onChange={(e) => onClientInfo && onClientInfo({ ...clientInfo, estimate_gst: e.target.checked ? "yes" : "no" })} />
+              <span style={{ fontSize: 12.5 }}>Registered for GST (adds 10%)</span>
             </label>
           </div>
         </div>

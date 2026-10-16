@@ -443,7 +443,7 @@ export async function buildMarkedSetPdf({ projectName, dark, sheets, shapes, mar
     if (hasMultipliers(bySheet)) {
       draw(BY_SHEET_BASE_NOTE, { x: 52, y: 60, size: 7.5, font, color: muted });
     }
-    draw(`Generated ${new Date().toLocaleDateString()}`, { x: 52, y: 48, size: 8, font, color: muted });
+    draw(`Generated ${new Date().toLocaleDateString("en-AU")}`, { x: 52, y: 48, size: 8, font, color: muted });
   }
 
   // ── RFI schedule page — ONLY when RFIs exist, so an RFI-free export never
@@ -457,7 +457,7 @@ export async function buildMarkedSetPdf({ projectName, dark, sheets, shapes, mar
       while (s && fnt.widthOfTextAtSize(s, size) > maxW) s = s.slice(0, -2).trimEnd() + "…";
       return s;
     };
-    const footText = `Generated ${new Date().toLocaleDateString()}`;
+    const footText = `Generated ${new Date().toLocaleDateString("en-AU")}`;
     const BOT = 58;   // content never crosses below this; the footer sits at y=40
     let pg, draw, y;
     const newSchedPage = () => {

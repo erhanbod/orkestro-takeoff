@@ -2905,7 +2905,7 @@ export default function TakeoffCanvas() {
     const names = sheets.map((s) => s.name);
     let saved = false;
     if (shapes.length || conditions.length || markups.length) {
-      try { await store.saveSnapshot(`Before Clear workspace — ${new Date().toLocaleString()}`, buildPayload()); saved = true; }
+      try { await store.saveSnapshot(`Before Clear workspace — ${new Date().toLocaleString("en-AU")}`, buildPayload()); saved = true; }
       catch { /* best-effort (quota) — clearing continues; message says what happened */ }
     }
     for (const n of names) { try { await store.removePdf(n); } catch { /* already gone */ } evictDoc(n); }
@@ -2950,7 +2950,7 @@ export default function TakeoffCanvas() {
       setCommitMsg(`Opening ${file.name}…`);
       const { takeoff, pdfs } = await parseProjectArchive(new Uint8Array(await file.arrayBuffer()));
       if (shapes.length || conditions.length || markups.length) {
-        try { await store.saveSnapshot(`Before opening ${file.name} — ${new Date().toLocaleString()}`, buildPayload()); }
+        try { await store.saveSnapshot(`Before opening ${file.name} — ${new Date().toLocaleString("en-AU")}`, buildPayload()); }
         catch { /* best-effort — the open continues; archives are additive to PDFs */ }
       }
       for (const f of pdfs) {
@@ -8344,6 +8344,7 @@ export default function TakeoffCanvas() {
     ...(c.drop_ft != null ? { drop_ft: c.drop_ft } : {}),
     ...(c.laborType != null ? { laborType: c.laborType } : {}),
     ...(c.subfloorType != null ? { subfloorType: c.subfloorType } : {}),
+    ...(c.pricing ? { pricing: { ...c.pricing } } : {}),
     ...(c.roll_setup ? { roll_setup: { ...c.roll_setup } } : {}),   // #136 — the roll spec is part of what makes a CPT-1 template CPT-1
     materials: (c.materials || []).map(({ id: _id, ...m }) => (m.grout ? { ...m, grout: { ...m.grout } } : m)),   // ids are minted on instantiation; grout never shared by reference
   });
@@ -11279,7 +11280,7 @@ export default function TakeoffCanvas() {
       {connectOpen && <ConnectAI onClose={() => setConnectOpen(false)} />}
       {tour && view === "canvas" && !focusMode && !guideOpen && !connectOpen && (
         <FirstTakeoffTour done={tour.done} step={currentStep(tour.done)} sheetOpen={tourSheetOpen}
-          sampleBusy={tourSampleBusy} onLoadSample={loadSampleForTour} result={tourResult}
+          sampleBusy={tourSampleBusy} onLoadSample={loadSampleForTour} result={tourResult} units={units}
           onClose={() => setTour(null)} onConnect={() => { setTour(null); setConnectOpen(true); }} />
       )}
       {/* on-device OCR's download notice (#471): modal over everything, the

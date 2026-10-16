@@ -65,7 +65,7 @@ export default function RevisionsPanel({ current, units = "imperial", onRestore,
   const diff = useMemo(() => (sideA && sideB ? diffTakeoffs(sideA, sideB) : null), [sideA, sideB]);
 
   const nameOf = (id) => (id === "current" ? "Current takeoff" : revs?.find((r) => r.id === id)?.name || "Revision");
-  const defaultName = () => `Rev ${(revs?.length || 0) + 1} — ${new Date().toLocaleDateString()}`;
+  const defaultName = () => `Rev ${(revs?.length || 0) + 1} — ${new Date().toLocaleDateString("en-AU")}`;
 
   const save = async (name) => {
     setBusy(true); setErr("");
@@ -87,7 +87,7 @@ export default function RevisionsPanel({ current, units = "imperial", onRestore,
     setBusy(true); setErr("");
     try {
       // bank the live takeoff first — restore must never be a one-way door
-      await store.saveSnapshot(`Auto-backup before restore — ${new Date().toLocaleString()}`, current);
+      await store.saveSnapshot(`Auto-backup before restore — ${new Date().toLocaleString("en-AU")}`, current);
       const rec = await store.getSnapshot(id);
       if (!rec) { setErr("Revision not found — it may have been deleted in another tab."); setBusy(false); setConfirmId(""); return; }
       onRestore(rec.payload || {});
@@ -169,7 +169,7 @@ export default function RevisionsPanel({ current, units = "imperial", onRestore,
                 {revs.map((r) => (
                   <tr key={r.id}>
                     <td style={{ ...td, textAlign: "left", fontWeight: 600 }}>{r.name}</td>
-                    <td style={{ ...td, color: "var(--ink-muted)" }}>{r.created_at ? new Date(r.created_at).toLocaleString() : "—"}</td>
+                    <td style={{ ...td, color: "var(--ink-muted)" }}>{r.created_at ? new Date(r.created_at).toLocaleString("en-AU") : "—"}</td>
                     <td style={td}>{r.conditions}</td>
                     <td style={td}>{r.shapes}</td>
                     <td style={{ ...td, textAlign: "left", paddingLeft: 18 }}>

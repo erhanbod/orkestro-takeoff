@@ -31,6 +31,7 @@ import { attrValue, columnLabel } from "../lib/conditionColumns.js";
 import { SPEC_FIELDS } from "../lib/reportColumns.js";
 import { num } from "../lib/num.js";
 import { round2 } from "../lib/num.js";
+import { pricingBasis, rateUnitLabel, rateToDisplay, rateFromDisplay } from "../lib/estimate.js";
 import { perToDisplay, perFromDisplay, basisLabels, basisUnit } from "../lib/units";
 import { areaVal, areaUnit, lenVal, lenUnit, heightUnit, heightInputToFeet, heightStep, thickUnit, thickInputToInches, thickStep, dimInputStr } from "../lib/units";
 import { HATCHES, PALETTE, NO_FILL, HatchSwatch } from "./hatches.jsx";
@@ -220,6 +221,30 @@ function CoveragePresetSelect({ material: m, onPick, units = "imperial" }) {
   );
 }
 
+// AUD money input (ex GST). Draft-buffered like CoverageInput; blank or 0
+// clears the price. `toStored` / `fromStored` convert per-unit rates at the
+// display edge (rates are stored per metric unit, lib/estimate.js).
+function PriceInput({ name, value, onCommit, title, suffix = "", warn = false, width = 64, toShown = (v) => v, toStored = (v) => v }) {
+  const [draft, setDraft] = useState(null);
+  const v = Number(value) || 0;
+  const shown = v ? String(Math.round(toShown(v) * 100) / 100) : "";
+  const commit = () => {
+    if (draft != null) {
+      const n = parseFloat(String(draft).replace(/[$,\s]/g, ""));
+      onCommit(Number.isFinite(n) && n > 0 ? toStored(n) : 0);
+    }
+    setDraft(null);
+  };
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: warn ? "var(--c-warning)" : "var(--ink-muted)" }} title={title}>
+      $<input name={name} type="text" inputMode="decimal" value={draft ?? shown} placeholder="0.00"
+        onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) e.currentTarget.blur(); }}
+        style={{ ...ip, width, textAlign: "right", ...(warn ? { border: "1px solid var(--c-warning)" } : {}) }} />{suffix}
+    </span>
+  );
+}
+
 // Editable supporting-materials rows for a condition (coverage-derived order qty).
 function MaterialsEditor({ materials, onAdd, onUpdate, onRemove, library, libById, overridden, onRevert, onAttach, onPromote,
     twin = false, parentTag = "", dropped = [], parentRows = [], onFollowFamilyRow, onRestoreDroppedRow,
@@ -293,6 +318,9 @@ function MaterialsEditor({ materials, onAdd, onUpdate, onRemove, library, libByI
               <input name="material-round" type="checkbox" checked={m.round !== false} onChange={(e) => onUpdate(m.id, { round: e.target.checked })} />round up
             </label>
             {ov("round") && rv(m, "round")}
+            <PriceInput name="material-price" value={m.price} warn={ov("price")} title={`Price per ${m.unit || "unit"} (AUD, ex GST). Line cost = order qty × price, shown in the Report estimate.`}
+              onCommit={(price) => onUpdate(m.id, { price })} suffix={`/${m.unit || "unit"}`} />
+            {ov("price") && rv(m, "price")}
             <CoveragePresetSelect material={m} units={units} onPick={(patch) => onUpdate(m.id, patch)} />
             <input name="material-note" value={m.note || ""} onChange={(e) => onUpdate(m.id, { note: e.target.value })} placeholder="note (coats, trowel…)" style={{ ...ip, width: 150, ...(ov("note") ? { border: OV } : {}) }} />
             {ov("note") && rv(m, "note")}
@@ -1247,6 +1275,24 @@ function TakeoffsPanel({
                   onChange={(e) => onUpdateCond({ subfloorType: e.target.value })}
                   style={{ ...ip, flex: 1, minWidth: 0 }} />
               </label>
+              {(() => {
+                // Orkestro estimate rates — $ per primary unit, stored metric.
+                const kind = pricingBasis(row).kind || "area";
+                const ru = rateUnitLabel(kind, units);
+                const setRate = (k) => (v) => onUpdateCond({ pricing: { ...(c.pricing || {}), [k]: v } });
+                const conv = { toShown: (v) => rateToDisplay(v, kind, units), toStored: (v) => rateFromDisplay(v, kind, units) };
+                return (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }} title="Rates for the Report estimate (AUD, ex GST)">Rates</span>
+                    <span style={{ color: "var(--ink-muted)" }}>supply</span>
+                    <PriceInput name="condition-rate-supply" value={c.pricing?.supply} onCommit={setRate("supply")} suffix={`/${ru}`} {...conv}
+                      title={`Supply rate, $ per ${ru} ex GST. Prices the waste-adjusted quantity (what you buy).`} />
+                    <span style={{ color: "var(--ink-muted)" }}>labour</span>
+                    <PriceInput name="condition-rate-labour" value={c.pricing?.labour} onCommit={setRate("labour")} suffix={`/${ru}`} {...conv}
+                      title={`Labour rate, $ per ${ru} ex GST. Prices the measured quantity (what gets installed).`} />
+                  </div>
+                );
+              })()}
             </div>
             {/* Family: a twin says whose it is, and how to cut it loose. */}
             {c.variant_of && (() => {

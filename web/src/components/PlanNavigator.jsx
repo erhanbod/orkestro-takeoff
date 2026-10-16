@@ -56,7 +56,7 @@ function fmtSize(s) {
 function fmtDate(t) {
   if (!t) return "";
   const d = new Date(t);
-  return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-AU");
 }
 
 const rowBase = { display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderBottom: "1px solid var(--ink-faint)", background: "var(--paper-bright)" };

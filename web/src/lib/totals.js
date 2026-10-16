@@ -22,7 +22,7 @@ import { round2 } from "./num.js";
 import { REPORT_SCHEMA } from "./takeoffConstants.ts";
 import { csvEsc as esc } from "./csv.js";
 import { GETTERS, CSV_PROFILE, colGetter, floorPerimeterLf, applyUnits, METRIC_CSV_LABELS } from "./reportColumns.js";
-import { M_PER_FT, M2_PER_SF } from "./units";
+import { M_PER_FT, M2_PER_SF, perToDisplay } from "./units";
 import { attrValue } from "./conditionColumns.js";
 import { shapeLabelValue } from "./shapeLabels.js";
 import { compareSheetKeys } from "./sheetKey"; // NOT ./sheets — that module imports pdfjs-dist
@@ -427,9 +427,12 @@ export function totalsToCsv(rows, projectName = "", bySheet = null, sheetLabel =
   // supporting materials — per condition, then a combined buy list. Coverage
   // rates deliberately stay as entered (SF/LF-based) in metric mode — the
   // upstream metric contract; the report panel carries the footnote.
-  const basisLabel = (b) => (b === "linear" ? "LF" : b === "count" ? "EA" : b === "seam_lf" ? "seam LF" : "SF");
+  const basisLabel = (b) => (M
+    ? (b === "linear" ? "m" : b === "count" ? "EA" : b === "seam_lf" ? "seam m" : "m2")
+    : (b === "linear" ? "LF" : b === "count" ? "EA" : b === "seam_lf" ? "seam LF" : "SF"));
+  const perShown = (m) => (M ? perToDisplay(m.per, m.basis, "metric") : m.per);   // Orkestro: metric coverage reads m²/m, not SF/LF
   const perCond = [];
-  for (const r of rows) for (const m of (r.materials || [])) perCond.push([r.finish_tag, m.name, m.qty, m.unit, `1 ${m.unit || "unit"} / ${m.per} ${basisLabel(m.basis)}`, m.note || ""]);
+  for (const r of rows) for (const m of (r.materials || [])) perCond.push([r.finish_tag, m.name, m.qty, m.unit, `1 ${m.unit || "unit"} / ${perShown(m)} ${basisLabel(m.basis)}`, m.note || ""]);
   if (perCond.length) {
     lines.push("");
     lines.push(["Finish", "Material", "Qty", "Unit", "Coverage", "Note"].map(esc).join(","));

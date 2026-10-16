@@ -96,3 +96,36 @@ test("ABN checksum and formatting", () => {
   assert.equal(formatAbn("51824753556"), "51 824 753 556");
   assert.equal(formatAbn("abc"), "abc");
 });
+
+import { estimateRows, estimateSummary, estimateCsv, rateFromDisplay, rateToDisplay, fmtAud, hasPricing } from "../src/lib/estimate.js";
+import { conditionTotals } from "../src/lib/totals.js";
+test("estimate: supply on waste qty, labour on measured, priced buy-list lines, GST", () => {
+  const sf = 100 / 0.09290304; // 100 m²
+  const cond = { id: "c", finish_tag: "LVT-1", waste_pct: 10, pricing: { supply: 40, labour: 25 }, materials: [
+    { name: "Adhesive", per: 4 / 0.09290304, basis: "area", unit: "L", price: 12.5 },
+    { name: "Primer", per: 10 / 0.09290304, basis: "area", unit: "L" },
+  ] };
+  const rows = conditionTotals([cond], [{ id: "s", condition_id: "c", measure_role: "floor_area", computed: { area_sf: sf } }]);
+  const [l] = estimateRows([cond], rows);
+  assert.equal(l.unit, "m²");
+  assert.equal(l.supply, 4400);        // 110 m² × $40
+  assert.equal(l.labour, 2500);        // 100 m² × $25
+  assert.equal(l.materials_cost, 312.5); // 25 L × $12.50; primer unpriced
+  assert.equal(l.total, 7212.5);
+  const s = estimateSummary([l], { margin_pct: 10 });
+  assert.equal(s.margin, 721.25);
+  assert.equal(s.ex_gst, 7933.75);
+  assert.equal(s.gst, 793.38);
+  assert.equal(s.inc_gst, 8727.13);
+  assert.equal(estimateSummary([l], { gst_registered: false }).gst, 0);
+  assert.match(estimateCsv([l], s), /Total inc GST,.*8727\.13/);
+  assert.equal(fmtAud(1234.5), "$1,234.50");
+});
+
+test("estimate: unpriced conditions stay out; imperial rate edge round-trips", () => {
+  assert.equal(hasPricing({ materials: [{ name: "x" }] }), false);
+  assert.deepEqual(estimateRows([{ id: "c", materials: [] }], [{ id: "c", total_sf: 10 }]), []);
+  const perSf = rateToDisplay(50, "area", "imperial");
+  assert.ok(Math.abs(rateFromDisplay(perSf, "area", "imperial") - 50) < 1e-9);
+  assert.equal(rateToDisplay(50, "area", "metric"), 50);
+});

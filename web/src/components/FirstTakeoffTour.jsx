@@ -49,9 +49,9 @@ function Spotlight({ selector }) {
   );
 }
 
-const fmtSf = (n) => `${Math.round(n).toLocaleString()} SF`;
+const fmtSf = (n, units) => (units === "imperial" ? `${Math.round(n).toLocaleString("en-AU")} SF` : `${(n * 0.09290304).toLocaleString("en-AU", { maximumFractionDigits: 1 })} m²`);
 
-export default function FirstTakeoffTour({ done, step, sheetOpen, sampleBusy, onLoadSample, onClose, onConnect, result }) {
+export default function FirstTakeoffTour({ done, step, sheetOpen, sampleBusy, onLoadSample, onClose, onConnect, result, units = "metric" }) {
   const doneSet = new Set(done);
   const n = TOUR_STEPS.findIndex((s) => s.id === step?.id);
   const finished = !step;
@@ -86,7 +86,7 @@ export default function FirstTakeoffTour({ done, step, sheetOpen, sampleBusy, on
         {finished ? (
           <div style={{ marginTop: 8 }}>
             <strong style={{ fontFamily: "var(--f-display)", fontSize: 16 }}>
-              {result?.sf ? `You measured ${fmtSf(result.sf)}${result.tag ? ` of ${result.tag}` : ""}.` : "That's a takeoff."}
+              {result?.sf ? `You measured ${fmtSf(result.sf, units)}${result.tag ? ` of ${result.tag}` : ""}.` : "That's a takeoff."}
             </strong>
             <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--ink-soft)", margin: "6px 0 12px" }}>
               Same loop for every finish: pick a condition, trace, read the Report. Press <kbd>?</kbd> any time for the shortcuts.
