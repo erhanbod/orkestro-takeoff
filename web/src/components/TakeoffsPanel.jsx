@@ -30,6 +30,7 @@ import { Icon } from "../brand/icons.jsx";
 import { attrValue, columnLabel } from "../lib/conditionColumns.js";
 import { SPEC_FIELDS } from "../lib/reportColumns.js";
 import { num } from "../lib/num.js";
+import { round2 } from "../lib/num.js";
 import { perToDisplay, perFromDisplay, basisLabels, basisUnit } from "../lib/units";
 import { areaVal, areaUnit, lenVal, lenUnit, heightUnit, heightInputToFeet, heightStep, thickUnit, thickInputToInches, thickStep, dimInputStr } from "../lib/units";
 import { HATCHES, PALETTE, NO_FILL, HatchSwatch } from "./hatches.jsx";
@@ -1080,8 +1081,11 @@ function TakeoffsPanel({
   const editProposalByCond = useMemo(() => new Map((Array.isArray(conditionEditProposals) ? conditionEditProposals : []).filter((p) => p && p.condition_id).map((p) => [p.condition_id, p])), [conditionEditProposals]);
 
   // unit-system display edge (mirrors the canvas HUD): internal math stays feet
-  const fa = (sf) => `${num(areaVal(sf, units))} ${areaUnit(units)}`;
-  const fl = (lf) => `${num(lenVal(lf, units))} ${lenUnit(units)}`;
+  // Same rounding path as the Report (totals round2 in feet, then the metric
+  // column converter round2s again) so the chip and the report never differ
+  // by a tenth at a .x5 boundary (31.7 m here vs 31.8 m there).
+  const fa = (sf) => `${num(round2(areaVal(round2(sf), units)))} ${areaUnit(units)}`;
+  const fl = (lf) => `${num(round2(lenVal(round2(lf), units)))} ${lenUnit(units)}`;
 
   const renderCondRow = (c) => {
     const row = visRowById.get(c.id);

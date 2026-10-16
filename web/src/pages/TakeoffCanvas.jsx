@@ -81,7 +81,7 @@ import { pageSpans, spansInRect, graphSpans } from "../lib/pageSpans";
 import { normalizeTag, newScheduleRows } from "../lib/scheduleEdit";
 // Condition twins — the whole inheritance rule is in lib/variants.ts (test/variants.test.ts);
 // this file only calls it from the material write paths and the condition deletes.
-import { mintTwin, variantTag,
+import { mintTwin, variantTag, uniqueTag,
   propagateRowPatch, propagateRowAdd, propagateRowRemove,
   markRowLocal, dropRowLocal, followFamily, splitFromFamily, promoteOnDelete } from "../lib/variants.ts";
 import { isGoogleConfigured } from "../lib/google/auth.js";
@@ -6551,8 +6551,18 @@ export default function TakeoffCanvas() {
     return c;
   }
   function addCondition() {
-    const tag = (window.prompt("Finish tag for this condition (e.g. LVT-1):") || "").trim();
-    if (!tag) return;
+    // Refuse a duplicate finish tag: two "LVT-1" rows split one finish's
+    // quantities across the report. Re-prompt with the next free tag filled in.
+    const taken = new Set(conditions.map((c) => normalizeTag(c.finish_tag)));
+    let msg = "Finish tag for this condition (e.g. LVT-1):", suggestion = "";
+    let tag = "";
+    for (;;) {
+      tag = (window.prompt(msg, suggestion) ?? "").trim();
+      if (!tag) return;
+      if (!taken.has(normalizeTag(tag))) break;
+      suggestion = uniqueTag(tag, taken, normalizeTag);
+      msg = `"${tag}" is already a condition on this project. Pick another tag:`;
+    }
     const c = mintCondition(tag);
     activateCondition(c.id, { reassign: false });   // no reassign affordance on +condition; still dismisses a live bulk selection
   }

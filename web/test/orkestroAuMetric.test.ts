@@ -75,7 +75,7 @@ test("metric roll goods: 3.66 m broadloom by the lm, 2 m sheet by the m²", () =
 });
 
 test("metric column picker labels never say SF / LF / SY", () => {
-  const headers = applyUnits(TABLE_PROFILE, "metric").map((c) => c.header).join("|");
+  const headers = applyUnits(TABLE_PROFILE, "metric").map((c: any) => c.header).join("|");
   assert.ok(!/\b(SF|LF|SY)\b/.test(headers), headers);
 });
 
