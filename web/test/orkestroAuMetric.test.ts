@@ -129,3 +129,23 @@ test("estimate: unpriced conditions stay out; imperial rate edge round-trips", (
   assert.ok(Math.abs(rateFromDisplay(perSf, "area", "imperial") - 50) < 1e-9);
   assert.equal(rateToDisplay(50, "area", "metric"), 50);
 });
+
+import { FITOUT_TEMPLATES } from "../src/lib/canvasConstants.js";
+import { instantiateTemplate } from "../src/lib/canvasUtil.js";
+test("fitout PT-1: a 10 m run of 2.7 m partition buys sensible quantities", () => {
+  const c = instantiateTemplate(FITOUT_TEMPLATES.find((t: any) => t.finish_tag === "PT-1"));
+  assert.ok(Math.abs(c.height_ft * 0.3048 - 2.7) < 1e-9);
+  const wallSf = 27 / 0.09290304; // 10 m × 2.7 m
+  const [r] = conditionTotals([c], [{ id: "s", condition_id: c.id, measure_role: "surface_area", computed: { area_sf: wallSf } }]);
+  const q = Object.fromEntries(r.materials.map((m: any) => [m.name.split(" ")[0] + " " + m.name.split(" ")[1], m.qty]));
+  assert.equal(q["Plasterboard 13"], 19);   // 54 m² board +10% / 3.24
+  assert.equal(q["Steel stud"], 17);        // 27 / 1.62 → 16.7
+  assert.equal(q["Track 92"], 7);           // 20 m of track / 3 m
+});
+
+test("fitout templates: unique tags, every material has a unit and coverage", () => {
+  const tags = FITOUT_TEMPLATES.map((t: any) => t.finish_tag);
+  assert.equal(new Set(tags).size, tags.length);
+  for (const t of FITOUT_TEMPLATES as any[]) for (const m of t.materials) assert.ok(m.unit && m.per > 0, `${t.finish_tag} ${m.name}`);
+  assert.ok(!tags.some((t: string) => FLOORING_DEFAULTS.some((f: any) => f.finish_tag === t)));
+});

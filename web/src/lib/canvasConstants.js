@@ -165,3 +165,55 @@ export const FLOORING_DEFAULTS = [
     { name: "Transition strip", per: LM(2.7), basis: "linear", unit: "length", incl_waste: true, note: "2.7 m lengths" },
   ] },
 ];
+
+// Orkestro fitout starter templates (commercial interiors, AU). Same template
+// shape as FLOORING_DEFAULTS; added to the Library on demand ("+ starter
+// templates"), never seeded over an existing workspace. Measure with:
+//   PT / PNT  Surface-area traces (run × the condition's H) → wall m²
+//   CLG       area traces → ceiling m²
+//   DR        counts → ea
+//   SK / CRN  linear runs → m
+// Coverage is per WALL / CEILING m² (both linings of a partition are inside
+// one wall m²). Generic rates for a 2.7 m high, 600 mm stud-centre partition;
+// set your own off supplier data. Rates ($) are left blank on purpose.
+const H27 = 2.7 / M_PER_FT;   // 2.7 m ceiling height in internal feet
+export const FITOUT_TEMPLATES = [
+  { finish_tag: "PT-1", color: "#475569", hatch: "diag", waste_pct: 10, height_ft: H27, laborType: "Steel stud partition, 2 sides 13 mm plasterboard", materials: [   // Partition
+    { name: "Plasterboard 13 mm 2700×1200", per: M2(1.62), basis: "area", unit: "sheet", incl_waste: true, note: "3.24 m² sheet, both sides" },
+    { name: "Steel stud 92 mm × 2.7 m", per: M2(1.62), basis: "area", unit: "length", note: "600 mm centres" },
+    { name: "Track 92 mm × 3 m", per: M2(4.05), basis: "area", unit: "length", note: "top + bottom" },
+    { name: "Insulation batts R2.0", per: M2(5.4), basis: "area", unit: "pack", note: "≈5.4 m² / pack" },
+    { name: "Jointing compound 20 kg", per: M2(20), basis: "area", unit: "bag", note: "≈1 kg / wall m²" },
+    { name: "Paper tape 75 m", per: M2(25), basis: "area", unit: "roll" },
+    { name: "Plasterboard screws (1000)", per: M2(16), basis: "area", unit: "box" },
+  ] },
+  { finish_tag: "CLG-1", color: "#0f766e", hatch: "grid", waste_pct: 5, laborType: "Suspended grid ceiling 1200×600", materials: [   // Suspended ceiling
+    { name: "Ceiling tiles 1200×600 (box of 8)", per: M2(5.76), basis: "area", unit: "box", incl_waste: true },
+    { name: "Main tee 3.6 m", per: M2(4.32), basis: "area", unit: "length", note: "1200 mm centres" },
+    { name: "Cross tee 1200", per: M2(0.72), basis: "area", unit: "ea", note: "600 mm centres" },
+    { name: "Hanger rod + clip", per: M2(1.44), basis: "area", unit: "ea", note: "1200×1200 grid" },
+  ] },
+  { finish_tag: "CLG-2", color: "#0e7490", hatch: "horiz", waste_pct: 10, laborType: "Plasterboard ceiling on furring channel", materials: [   // Set plasterboard ceiling
+    { name: "Plasterboard 10 mm 3600×1200", per: M2(4.32), basis: "area", unit: "sheet", incl_waste: true },
+    { name: "Furring channel 3 m", per: M2(1.8), basis: "area", unit: "length", note: "600 mm centres" },
+    { name: "Suspension clip + rod", per: M2(0.8), basis: "area", unit: "ea" },
+    { name: "Jointing compound 20 kg", per: M2(40), basis: "area", unit: "bag" },
+  ] },
+  { finish_tag: "PNT-1", color: "#a16207", hatch: "dots", waste_pct: 0, height_ft: H27, laborType: "Walls: sealer + 2 coats low sheen", materials: [   // Paint walls
+    { name: "Sealer/undercoat", per: M2(16), basis: "area", unit: "L", note: "1 coat @ 16 m²/L" },
+    { name: "Low sheen acrylic", per: M2(8), basis: "area", unit: "L", note: "2 coats @ 16 m²/L" },
+  ] },
+  { finish_tag: "DR-1", color: "#7c2d12", hatch: "solid", waste_pct: 0, laborType: "Single swing door set", materials: [   // Door (count)
+    { name: "Door leaf 2040×820", per: 1, basis: "count", unit: "ea" },
+    { name: "Steel door frame", per: 1, basis: "count", unit: "ea" },
+    { name: "Hardware set (lever, hinges, stop)", per: 1, basis: "count", unit: "set" },
+  ] },
+  { finish_tag: "SK-1", color: "#57534e", hatch: "horiz", waste_pct: 10, laborType: "MDF skirting 66×18, painted", materials: [   // Skirting (linear)
+    { name: "MDF skirting 66×18 × 5.4 m", per: LM(5.4), basis: "linear", unit: "length", incl_waste: true },
+    { name: "Construction adhesive", per: LM(15), basis: "linear", unit: "tube" },
+  ] },
+  { finish_tag: "CRN-1", color: "#4b5563", hatch: "vert", waste_pct: 10, laborType: "Cove cornice 90 mm", materials: [   // Cornice (linear)
+    { name: "Cove cornice 90 mm × 4.8 m", per: LM(4.8), basis: "linear", unit: "length", incl_waste: true },
+    { name: "Cornice cement 20 kg", per: LM(80), basis: "linear", unit: "bag" },
+  ] },
+];

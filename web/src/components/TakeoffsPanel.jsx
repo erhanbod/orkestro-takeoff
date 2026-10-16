@@ -950,7 +950,7 @@ function TakeoffsPanel({
   onDuplicateCondition, onSplitCondition, onFollowFamilyRow, onRestoreDroppedRow,
   onDeriveTransitions, onLocateTransition,
   onBulkWaste, onBulkColor, onBulkDelete,
-  onSaveTemplate, onApplyTemplate, onRenameTemplate, onDeleteTemplate,
+  onSaveTemplate, onApplyTemplate, onRenameTemplate, onDeleteTemplate, onAddStarterTemplates,
   onAttachLibMaterial, onPromoteMaterial, onRevertMatField, matFieldOverridden,
   onUpdateLibMaterial, onPushLibUpdate, onDeleteLibMaterial, onAddLibMaterial,
   onAddColumn, onRenameColumn, onDeleteColumn, onAddColumnValue, onRemoveColumnValue, onRenameColumnValue,
@@ -1457,6 +1457,13 @@ function TakeoffsPanel({
                 style={{ width: "100%", padding: "6px 10px", borderRadius: 0, border: "1px dashed var(--ink-faint)", background: "transparent", cursor: aCond ? "pointer" : "default", fontSize: 12, color: aCond ? "var(--ink)" : "var(--ink-faint)" }}>
                 + save {aCond?.finish_tag || "the active condition"} to the library
               </button>
+              {onAddStarterTemplates && (
+                <button onClick={onAddStarterTemplates}
+                  title="Add Orkestro's AU starter templates: partitions, ceilings, paint, doors, skirting, cornice and metric flooring. Existing tags are left alone."
+                  style={{ width: "100%", marginTop: 6, padding: "6px 10px", borderRadius: 0, border: "1px dashed var(--ink-faint)", background: "transparent", cursor: "pointer", fontSize: 12, color: "var(--ink)" }}>
+                  + fitout &amp; flooring starter templates (AU)
+                </button>
+              )}
             </div>
             {templates.length === 0 && <div style={{ padding: "2px 12px 12px", color: "var(--ink-muted)" }}>No templates yet — make a condition the way you like it, then save it here.</div>}
             {templates.map((t, idx) => (

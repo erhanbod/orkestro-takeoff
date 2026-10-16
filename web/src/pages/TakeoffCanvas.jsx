@@ -190,7 +190,7 @@ import {
   PANEL_GAP, DETAIL_ENGAGE, DETAIL_MARGIN, SYNC_MS, GESTURE_MS, SNAP_CELL,
   MEASURE_TOOLS, CUT_TOOLS, MARKUP_TOOLS, MARKUP_IDS, HL_INKS, HL_SIZES,
   MARKUP_IMG_MAX, MAX_IMAGE_MARKUP_BYTES, MARKUP_UPLOAD_MAX_BYTES, MARKUP_DECODE_MAX_AREA,
-  FLOAT_GAP, SWEEP_PANEL_W, CANVAS_EDGE, RAIL_CLEAR, ZONE_PANEL_W,
+  FLOAT_GAP, SWEEP_PANEL_W, CANVAS_EDGE, RAIL_CLEAR, ZONE_PANEL_W, FITOUT_TEMPLATES, FLOORING_DEFAULTS,
 } from "../lib/canvasConstants.js";
 import { uid, clamp, isDangerMsg, instantiateTemplate, seedConditions } from "../lib/canvasUtil.js";
 import { repairConditionMultipliers, describeMultiplierRepair } from "../lib/multiplier.js";
@@ -8348,6 +8348,16 @@ export default function TakeoffCanvas() {
     ...(c.roll_setup ? { roll_setup: { ...c.roll_setup } } : {}),   // #136 — the roll spec is part of what makes a CPT-1 template CPT-1
     materials: (c.materials || []).map(({ id: _id, ...m }) => (m.grout ? { ...m, grout: { ...m.grout } } : m)),   // ids are minted on instantiation; grout never shared by reference
   });
+  // Orkestro: add the AU fitout + flooring starter templates to the library,
+  // skipping any finish tag already there (never overwrites the user's own).
+  const addStarterTemplates = () => {
+    const have = new Set(templates.map((t) => normalizeTag(t.finish_tag)));
+    const add = [...FITOUT_TEMPLATES, ...FLOORING_DEFAULTS].filter((t) => !have.has(normalizeTag(t.finish_tag)))
+      .map((t) => ({ ...t, materials: (t.materials || []).map((m) => (m.grout ? { ...m, grout: { ...m.grout } } : { ...m })) }));
+    if (!add.length) { setCommitMsg("The starter templates are already in your library."); return; }
+    persistTemplates([...templates, ...add]);
+    setCommitMsg(`Added ${add.length} starter template${add.length === 1 ? "" : "s"} to the library.`);
+  };
   const saveActiveAsTemplate = () => {
     if (!aCond) return;
     const tpl = condToTemplate(aCond);
@@ -8467,7 +8477,7 @@ export default function TakeoffCanvas() {
     onLocateTransition: locateSheetPoint,
     onFollowFamilyRow: followFamilyRow, onRestoreDroppedRow: restoreDroppedRow,
     onBulkWaste: bulkWasteConditions, onBulkColor: bulkColorConditions, onBulkDelete: bulkDeleteConditions,
-    onSaveTemplate: saveActiveAsTemplate, onApplyTemplate: applyTemplate,
+    onSaveTemplate: saveActiveAsTemplate, onApplyTemplate: applyTemplate, onAddStarterTemplates: addStarterTemplates,
     onRenameTemplate: renameTemplate, onDeleteTemplate: deleteTemplate,
     onAddColumn: addColumn, onRenameColumn: renameColumn, onDeleteColumn: deleteColumn,
     onAddColumnValue: addColumnValue, onRemoveColumnValue: removeColumnValue, onRenameColumnValue: renameColumnVal,
