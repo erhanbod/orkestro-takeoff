@@ -5,7 +5,7 @@
 // (The one import is another values-only constant: the grout tile-geometry
 // defaults from lib/coverage.js, so the CT-1 seed and the editor can't drift.)
 
-import { GROUT_DEFAULTS } from "./coverage.js";
+import { groutCoverageSfPerBag } from "./coverage.js";
 import { M2_PER_SF, M_PER_FT } from "./units";
 
 export const MIN_SCALE = 0.03;
@@ -119,6 +119,10 @@ export const HL_SIZES = [["F", 8], ["M", 14], ["B", 22]];   // screen px at draw
 // Rates are generic starting points; set them from the product data sheet.
 const M2 = (v) => v / M2_PER_SF;   // m² per unit → SF per unit
 const LM = (v) => v / M_PER_FT;    // m per unit  → LF per unit
+// Grout calculator geometry is stored in inches / lb (lib/coverage.js); this is
+// a 600×600×10 mm porcelain tile, 3 mm joint, 5 kg bag, written in that contract.
+const MM_IN = (mm) => Math.round((mm / 25.4) * 1000) / 1000;
+const AU_TILE_GROUT = { tileL: MM_IN(600), tileW: MM_IN(600), tileT: MM_IN(10), joint: MM_IN(3), bagLbs: 11.023 };
 export const FLOORING_DEFAULTS = [
   { finish_tag: "CPT-1", color: "#2f7d54", hatch: "speckle", waste_pct: 5,  materials: [                                                                                                  // Carpet tile
     { name: "Carpet tiles", per: M2(5), basis: "area", unit: "box", incl_waste: true, note: "20 × 500×500 tiles" },
@@ -135,7 +139,7 @@ export const FLOORING_DEFAULTS = [
     { name: "Sealer (primer coat)",     per: M2(10), basis: "area", unit: "L", note: "1 prime coat" },
     { name: "Polyurethane (2K finish)", per: M2(3.3), basis: "area", unit: "L", note: "≈3 coats" },
   ] },
-  { finish_tag: "VCT-1", color: "#2563eb", hatch: "checker", waste_pct: 5,  materials: [                                                                                                  // Vinyl composition tile
+  { finish_tag: "VT-1",  color: "#2563eb", hatch: "checker", waste_pct: 5,  materials: [                                                                                                  // Vinyl composition tile
     { name: "Vinyl tiles", per: M2(4.2), basis: "area", unit: "box", incl_waste: true },
     { name: "Adhesive", kind: "adhesive", per: M2(8.5), basis: "area", unit: "L" },
   ] },
@@ -150,8 +154,8 @@ export const FLOORING_DEFAULTS = [
   ] },
   { finish_tag: "CT-1",  color: "#9333ea", hatch: "grid",    waste_pct: 10, materials: [                                                                                                  // Ceramic / porcelain tile
     { name: "Tiles", per: M2(1.44), basis: "area", unit: "box", incl_waste: true, note: "600×600, 4 per box" },
-    { name: "Thinset mortar", kind: "mortar", per: 65, basis: "area", unit: "bag", note: '1/4″×3/8″×1/4″ sq' },
-    { name: "Grout", kind: "grout", per: 512, basis: "area", unit: "bag", grout: { ...GROUT_DEFAULTS }, note: '12×24×3/8″ @ 1/8″ · 25 lb' },
+    { name: "Tile adhesive (20 kg)", kind: "mortar", per: M2(4.5), basis: "area", unit: "bag", note: "10 mm square notch" },
+    { name: "Grout (5 kg)", kind: "grout", per: groutCoverageSfPerBag(AU_TILE_GROUT), basis: "area", unit: "bag", grout: { ...AU_TILE_GROUT }, note: "600×600×10 mm tile @ 3 mm joint · 5 kg bag" },
   ] },
   { finish_tag: "RB-1",  color: "#475569", hatch: "horiz",   waste_pct: 5,  materials: [                                                                                                  // Rubber / resilient skirting (linear)
     { name: "Skirting", per: LM(2.4), basis: "linear", unit: "length", incl_waste: true, note: "2.4 m lengths" },

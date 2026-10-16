@@ -54,7 +54,7 @@ import PageReadControl, { readControlPlacement, READ_CONTROL_LEFT } from "../com
 import TakeoffsPanel, { clampPanelW, CONDITION_DND_MIME, ConditionAppearanceEditor } from "../components/TakeoffsPanel.jsx";
 import { HATCHES, PALETTE, NO_FILL, HatchPattern, HatchSwatch } from "../components/hatches.jsx";
 import { Icon } from "../brand/icons.jsx";
-import { RENDER_SCALE, MAX_GROUP, STANDARD_SCALES, parseSheetKey, compareSheetKeys, extractSheetNumber, detectScale, extractRegionText, extractTextMarks, extractDimTexts } from "../lib/sheets";
+import { RENDER_SCALE, MAX_GROUP, STANDARD_SCALES, isMetricScaleLabel, parseSheetKey, compareSheetKeys, extractSheetNumber, detectScale, extractRegionText, extractTextMarks, extractDimTexts } from "../lib/sheets";
 import { joinAbuttingSpans } from "../lib/textjoin";
 import { buildSheetIndex, dropFileFromIndex } from "../lib/planIndex";
 import { labelsForFile, labelsOnFileChange, withPageLabel, withFoundLabels } from "../lib/sheetLabels";
@@ -5936,7 +5936,7 @@ export default function TakeoffCanvas() {
   // ── live counter (mock) — floating running totals, parked anywhere ──
   // Measured quantities per condition (the number that moves as you trace),
   // shaped from the ONE quantity computer (lib/totals.js conditionTotals).
-  const liveCounterRows = useMemo(() => counterRows(conditionTotals(conditions, shapes), activeCond), [conditions, shapes, activeCond]);
+  const liveCounterRows = useMemo(() => counterRows(conditionTotals(conditions, shapes), activeCond, units), [conditions, shapes, activeCond, units]);
 
   // ── inline text editor — a screen-space <input> overlay (retires window.prompt).
   // An HTML input can't live in the zoom/pan-transformed SVG group, so it is
@@ -8657,8 +8657,17 @@ export default function TakeoffCanvas() {
       onHover: (on) => { if (on) { if (!scales[focusPanel.key]) showScaleGuide(focusPanel.key, scaleDet.upp, scaleDet.label, true); } else clearPreviewGuide(); },
     });
   }
-  scaleItems.push({ section: "Standard" });
-  for (const s of STANDARD_SCALES) scaleItems.push({ id: s.label, label: s.label, active: stdValue === s.label, onSelect: () => { rescaleSheet(focusPanel.key, s.upp); setScaleSources((sc) => ({ ...sc, [focusPanel.key]: "standard" })); showScaleGuide(focusPanel.key, s.upp, s.label); } });
+  // Metric presets lead in metric mode (AU/EU sets); imperial follows.
+  const metricPresets = STANDARD_SCALES.filter((s) => isMetricScaleLabel(s.label));
+  const imperialPresets = STANDARD_SCALES.filter((s) => !isMetricScaleLabel(s.label));
+  const presetGroups = units === "imperial"
+    ? [["Imperial", imperialPresets], ["Metric", metricPresets]]
+    : [["Metric", metricPresets], ["Imperial", imperialPresets]];
+  for (const [title, list] of presetGroups) {
+  scaleItems.push({ section: title });
+  if (title === "Metric") scaleItems.push({ note: "Ratios assume the sheet it was drawn for: 1:100 @ A1 issued as an A3 PDF measures 1:200." });
+  for (const s of list) scaleItems.push({ id: s.label, label: s.label, active: stdValue === s.label, onSelect: () => { rescaleSheet(focusPanel.key, s.upp); setScaleSources((sc) => ({ ...sc, [focusPanel.key]: "standard" })); showScaleGuide(focusPanel.key, s.upp, s.label); } });
+  }
   scaleItems.push("divider");
   scaleItems.push({ id: "calibrate", icon: "calibrate", label: "Calibrate two points…", title: "Calibrate — click two points of a known dimension", active: tool === "calibrate", onSelect: () => setTool("calibrate") });
   scaleItems.push({ id: "check", icon: "check", label: "Check a dimension…", shortcut: "K", title: "Check a dimension (K) — click both ends of a printed dimension string; compares the measured length against what the drawing says", active: tool === "check", onSelect: () => setTool("check") });

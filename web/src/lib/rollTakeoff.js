@@ -15,6 +15,7 @@
 // { runMin, runMax, seq? } } }` — keyed by lane so a reshaped room (lane count
 // changed) drops its stale overrides via the engine's own laneCount guard.
 import {
+  ROLL_PRICE_UNITS,
   isRollType, defaultRollSetup, computeRollLayout, rollLayoutOrderLengthFt,
   rollLayoutRollCount, rollCutNumbers, rollQtyForUnit, roundUpToInch,
   seamLfBySrc, seamLfForStrips,
@@ -31,9 +32,9 @@ export function hasRollSetup(c) {
 
 // Fresh setup for the opt-in select — the engine's defaults plus the material
 // class the overlay colors by.
-export function mintRollSetup(material) {
+export function mintRollSetup(material, units = "imperial") {
   const ft = isRollType(material) ? material : "carpet";
-  return { material: ft, ...defaultRollSetup(ft) };
+  return { material: ft, ...defaultRollSetup(ft, units) };
 }
 
 // roll_setup → the engine's config object, every field coerced. doorway
@@ -124,7 +125,7 @@ export function computeRollTakeoff(conditions, shapes, dimsFor, uppFor) {
     const nums = rollCutNumbers(layout.strips);
     const orderFt = roundUpToInch(rollLayoutOrderLengthFt(layout.strips));
     const material = isRollType(rs.material) ? rs.material : "carpet";
-    const unit = rs.price_unit === "lf" || rs.price_unit === "sf" || rs.price_unit === "sy" ? rs.price_unit : "sf";
+    const unit = ROLL_PRICE_UNITS.includes(rs.price_unit) ? rs.price_unit : "sf";
     byCond.set(c.id, {
       material, config, direction: layout.direction, strips: layout.strips, nums,
       orderFt, rollCount: rollLayoutRollCount(layout.strips),

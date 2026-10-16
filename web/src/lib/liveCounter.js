@@ -14,13 +14,17 @@ export const COUNTER_MIN_KEY = "ot.liveCounterMin.v1";
 // conditionTotals rows → display rows. A condition can carry more than one
 // unit (a tile floor with a border: SF and LF); every nonzero quantity gets a
 // segment, ordered SF → LF → EA, so the row reads like the panel chip.
-export function counterRows(totals, activeCondId) {
+// `units` converts at the edge like everything else (lib/units.ts): metric
+// shows m² / m, never SF / LF.
+const M2_PER_SF = 0.09290304, M_PER_FT = 0.3048;
+export function counterRows(totals, activeCondId, units = "imperial") {
+  const metric = units === "metric";
   return totals
     .filter((t) => t.shape_count > 0)
     .map((t) => {
       const qtys = [];
-      if (t.total_sf) qtys.push({ qty: t.total_sf, unit: "SF" });
-      if (t.lf) qtys.push({ qty: t.lf, unit: "LF" });
+      if (t.total_sf) qtys.push(metric ? { qty: t.total_sf * M2_PER_SF, unit: "m²" } : { qty: t.total_sf, unit: "SF" });
+      if (t.lf) qtys.push(metric ? { qty: t.lf * M_PER_FT, unit: "m" } : { qty: t.lf, unit: "LF" });
       if (t.ea) qtys.push({ qty: t.ea, unit: "EA" });
       return { id: t.id, tag: t.finish_tag, color: t.color, qtys, shapes: t.shape_count, active: t.id === activeCondId };
     })
@@ -31,7 +35,7 @@ export function counterRows(totals, activeCondId) {
 // zeros trimmed. EA counts arrive integral and print integral.
 export function fmtQty(n) {
   const v = Math.round((Number(n) || 0) * 100) / 100;
-  return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return v.toLocaleString("en-AU", { maximumFractionDigits: 2 });
 }
 
 // Keep the widget reachable: at least a grab-strip of it stays inside the

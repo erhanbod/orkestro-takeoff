@@ -39,6 +39,7 @@ import { materialKind, MATERIAL_PRESETS, GROUT_DEFAULTS, groutDerivedFields, sho
 import { draftCommitValue, blurCommitValue, blurCommitNonNegative } from "../lib/draftInput.js";
 import { ROLL_FLOORING_TYPES } from "../lib/rollgoods.js";
 import { hasRollSetup, mintRollSetup } from "../lib/rollTakeoff.js";
+import { rollUnitLabel } from "../lib/rollgoods.js";
 import { Z } from "../lib/ui.js";
 import { ftIn } from "../lib/units";
 import { describeConditionEdit } from "../lib/proposals.js";
@@ -599,7 +600,7 @@ export function ConditionAppearanceEditor({ cond: c, onUpdateCond, onSetCondPara
         <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 6, marginTop: 1, borderTop: "1px solid var(--ink-faint)" }}>
           <select name="condition-roll-optin" value=""
             title="Make this condition a roll-goods material — its floor areas get figured into roll cuts (seams, order footage, a cut diagram)"
-            onChange={(e) => { if (e.target.value) onUpdateCond({ roll_setup: mintRollSetup(e.target.value) }); }}
+            onChange={(e) => { if (e.target.value) onUpdateCond({ roll_setup: mintRollSetup(e.target.value, units) }); }}
             style={{ padding: "3px 6px", borderRadius: 0, border: "1px dashed var(--ink-faint)", background: "transparent", color: "var(--ink-muted)", fontSize: 11.5, cursor: "pointer" }}>
             <option value="">+ roll goods…</option>
             <option value="carpet">Broadloom carpet</option>
@@ -628,6 +629,56 @@ export function ConditionAppearanceEditor({ cond: c, onUpdateCond, onSetCondPara
               <button onClick={() => onUpdateCond({ roll_setup: undefined })} title="Remove the roll-goods setup (cuts and order footage stop being figured; manual cut edits on shapes are kept but inert)"
                 style={{ marginLeft: "auto", padding: "1px 6px", border: "1px solid var(--ink-faint)", background: "transparent", color: "var(--c-danger)", cursor: "pointer", fontSize: 11 }}>✕</button>
             </div>
+            {units === "metric" ? (() => {
+              // Metric face over the same ft / in storage (lib/units contract).
+              const wM = Math.round((Number(rs.roll_width_ft) || 0) * 0.3048 * 100) / 100;
+              const lenM = Math.round((Number(rs.roll_length_ft) || 0) * 0.3048 * 10) / 10;
+              const seamMm = Math.round((rs.seam_allowance_in ?? 2) * 25.4);
+              const wallMm = Math.round((rs.wall_overage_in ?? 3) * 25.4);
+              const CARPET_M = ["3.66", "4"];
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                    <span style={{ color: "var(--ink-muted)" }}>Roll</span>
+                    {rs.material === "carpet" && CARPET_M.includes(String(wM)) ? (
+                      <select name="condition-roll-width" value={String(wM)} onChange={(e) => patch({ roll_width_ft: (parseFloat(e.target.value) || 3.66) / 0.3048 })} style={sel}
+                        title="Roll width: broadloom comes 3.66 m or 4 m">
+                        <option value="3.66">3.66 m</option>
+                        <option value="4">4.00 m</option>
+                      </select>
+                    ) : (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }} title="Roll width in metres (resilient sheet is commonly 2 m)">
+                        <input name="condition-roll-width-m" type="number" min="0.2" step="0.01" value={wM} onChange={(e) => patch({ roll_width_ft: Math.max(0.5, (parseFloat(e.target.value) || 0) / 0.3048) })} style={{ ...numIp, width: 54 }} /><span style={{ color: "var(--ink-muted)" }}>m</span>
+                      </span>
+                    )}
+                    <span style={{ color: "var(--ink-muted)" }} title="Max usable length of one physical roll (0 = continuous)">max</span>
+                    <input name="condition-roll-length" type="number" min="0" step="1" value={lenM}
+                      onChange={(e) => patch({ roll_length_ft: Math.max(0, (parseFloat(e.target.value) || 0) / 0.3048) })} style={numIp} />
+                    <span style={{ color: "var(--ink-muted)" }}>m</span>
+                    <select name="condition-roll-direction" value={rs.direction || "auto"} onChange={(e) => patch({ direction: e.target.value })} style={sel}
+                      title="Run direction: auto picks whichever needs less length">
+                      <option value="auto">auto</option>
+                      <option value="ns">N–S</option>
+                      <option value="ew">E–W</option>
+                    </select>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                    <span style={{ color: "var(--ink-muted)" }} title="Seam allowance per seamed edge">Seam</span>
+                    <input name="condition-roll-seam" type="number" min="0" step="5" value={seamMm}
+                      onChange={(e) => patch({ seam_allowance_in: Math.max(0, parseFloat(e.target.value) || 0) / 25.4 })} style={numIp} />
+                    <span style={{ color: "var(--ink-muted)" }}>mm · wall</span>
+                    <input name="condition-roll-wall" type="number" min="0" step="5" value={wallMm}
+                      onChange={(e) => patch({ wall_overage_in: Math.max(0, parseFloat(e.target.value) || 0) / 25.4 })} style={numIp} />
+                    <span style={{ color: "var(--ink-muted)" }}>mm · sells by</span>
+                    <select name="condition-roll-unit" value={rs.price_unit || "m2"} onChange={(e) => patch({ price_unit: e.target.value })} style={sel}
+                      title="The unit this material sells in">
+                      <option value="lm">lm</option>
+                      <option value="m2">m²</option>
+                    </select>
+                  </div>
+                </>
+              );
+            })() : (<>
             <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
               <span style={{ color: "var(--ink-muted)" }}>Roll</span>
               {rs.material === "carpet" ? (
@@ -668,10 +719,11 @@ export function ConditionAppearanceEditor({ cond: c, onUpdateCond, onSetCondPara
                 <option value="lf">LF</option>
               </select>
             </div>
+            </>)}
             {rollInfo && (
               <div style={{ fontFamily: "var(--f-mono,monospace)", fontSize: 11, color: "var(--ink)" }}
                 title="The figured order — how far down the roll the cuts reach (side-by-side cuts share length), rounded up to the inch. The Roll panel has the cut diagram.">
-                Figured: order {ftIn(rollInfo.orderFt)} · {rollInfo.qty} {rollInfo.unit.toUpperCase()}
+                Figured: order {units === "metric" ? `${(rollInfo.orderFt * 0.3048).toFixed(2)} m` : ftIn(rollInfo.orderFt)} · {rollInfo.qty} {rollUnitLabel(rollInfo.unit)}
                 {rollInfo.config.rollLengthFt > 0 ? ` · ${rollInfo.rollCount} roll${rollInfo.rollCount === 1 ? "" : "s"}` : ""}
                 {rollInfo.oversize && <span style={{ color: "var(--c-danger)" }}> · a cut exceeds one roll</span>}
               </div>

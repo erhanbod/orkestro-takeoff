@@ -27,14 +27,26 @@ export function rollColorForType(ft) { return ROLL_TYPE_COLORS[ft] || "#c9a876";
 // price_unit is the UNIT the material sells in (sy/sf/lf) — a unit, never a
 // dollar. No price field lives here: OpenTakeoff's stored takeoff is
 // quantities-only, and roll_setup would ride the condition into exports.
-export function defaultRollSetup(ft) {
+export function defaultRollSetup(ft, units = "imperial") {
+  if (units === "metric") {
+    // AU/metric stock: broadloom 3.66 m (also 4 m), resilient sheet 2 m. Carpet
+    // trades by the lineal metre off the roll, sheet goods by the m².
+    // Stored in the same ft / in contract as imperial (lib/units).
+    return { roll_width_ft: (ft === "carpet" ? 3.66 : 2) / 0.3048, roll_length_ft: 0, seam_allowance_in: 50 / 25.4, wall_overage_in: 75 / 25.4, doorway_overage_in: 25 / 25.4, direction: "auto", price_unit: ft === "carpet" ? "lm" : "m2" };
+  }
   return { roll_width_ft: 12, roll_length_ft: 0, seam_allowance_in: 2, wall_overage_in: 3, doorway_overage_in: 1, direction: "auto", price_unit: ft === "carpet" ? "sy" : "sf" };
 }
+/** Price units a roll can sell in: imperial sy/sf/lf, metric m2/lm. */
+export const ROLL_PRICE_UNITS = ["sy", "sf", "lf", "m2", "lm"];
+/** Display label for a roll price unit. */
+export const rollUnitLabel = (u) => (u === "m2" ? "m²" : u === "lm" ? "lm" : String(u || "").toUpperCase());
 // Figured roll quantity for a price unit, given order footage (lf of full-width roll).
 export function rollQtyForUnit(orderFt, rollWidthFt, unit) {
   const w = rollWidthFt || 12;
   if (unit === "lf") return orderFt;
   if (unit === "sf") return orderFt * w;
+  if (unit === "lm") return orderFt * 0.3048;
+  if (unit === "m2") return orderFt * w * 0.09290304;
   return (orderFt * w) / 9; // sy
 }
 

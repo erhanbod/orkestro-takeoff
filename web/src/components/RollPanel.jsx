@@ -12,7 +12,7 @@
 import { useRef, useState } from "react";
 import { Icon } from "../brand/icons.jsx";
 import { ftIn } from "../lib/units";
-import { rollColorForType } from "../lib/rollgoods.js";
+import { rollColorForType, rollUnitLabel } from "../lib/rollgoods.js";
 import { HatchSwatch } from "./hatches.jsx";
 
 const PXFT = 9; // diagram scale, px per foot — a 12-ft roll draws 108px wide
@@ -136,7 +136,7 @@ export default function RollPanel({
                 <span style={{ marginLeft: "auto", color: "var(--ink-muted)", fontSize: 10.5, fontFamily: "var(--f-mono)" }}>{ri.direction === "ns" ? "run N–S" : "run E–W"}</span>
               </div>
               <div style={{ fontFamily: "var(--f-mono)", fontSize: 11, color: "var(--ink)", marginBottom: 6 }}>
-                order {ftIn(ri.orderFt)} · {Math.round(ri.qty * 100) / 100} {ri.unit.toUpperCase()} · {ri.cutCount} cut{ri.cutCount === 1 ? "" : "s"}
+                order {ftIn(ri.orderFt)} · {Math.round(ri.qty * 100) / 100} {rollUnitLabel(ri.unit)} · {ri.cutCount} cut{ri.cutCount === 1 ? "" : "s"}
                 {ri.config.rollLengthFt > 0 ? ` · ${ri.rollCount} roll${ri.rollCount === 1 ? "" : "s"} @ ${ftIn(ri.config.rollLengthFt)}` : ""}
               </div>
               {ri.oversize && (

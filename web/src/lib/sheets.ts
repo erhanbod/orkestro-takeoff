@@ -59,6 +59,8 @@ export interface DetectedScale {
   upp: number;
   label: string;
   multi: boolean;
+  /** Set when an "@ A1" style note was corrected for the actual sheet size. */
+  paper?: { noted: string; actual: string };
 }
 
 // Standard architectural/engineering scales → units_per_px (real feet per image
@@ -90,6 +92,8 @@ export const STANDARD_SCALES: Scale[] = [
   { label: '1" = 40\'', upp: eng(40) },
   { label: '1" = 50\'', upp: eng(50) },
   { label: '1" = 60\'', upp: eng(60) },
+  { label: "1:5", upp: metric(5) },
+  { label: "1:10", upp: metric(10) },
   { label: "1:20", upp: metric(20) },
   { label: "1:25", upp: metric(25) },
   { label: "1:50", upp: metric(50) },
@@ -99,7 +103,47 @@ export const STANDARD_SCALES: Scale[] = [
   { label: "1:200", upp: metric(200) },
   { label: "1:250", upp: metric(250) },
   { label: "1:500", upp: metric(500) },
+  { label: "1:1000", upp: metric(1000) },
 ];
+
+/** True for a metric ratio preset ("1:100"). */
+export const isMetricScaleLabel = (label: string): boolean => /^1:\d+$/.test(label);
+
+// ── ISO paper sizes (AU drawing sets) ────────────────────────────────────────
+// Australian sets note scale with the sheet it was drawn for ("1:100 @ A1"),
+// then get issued as half-size A3 PDFs. A ratio scale is only true on the
+// sheet it names, so the drawn ratio must be multiplied by the size change.
+// Long side in mm; A(n) halves A(n-1).
+export const ISO_A_LONG_MM: Record<string, number> = { A0: 1189, A1: 841, A2: 594, A3: 420, A4: 297 };
+const PT_PER_MM = 72 / 25.4;
+/** The A-size a page is plotted at (either orientation), or null. ±3% tolerance. */
+export function isoSheetSize(widthPt: number, heightPt: number): string | null {
+  const longMm = Math.max(widthPt, heightPt) / PT_PER_MM;
+  const shortMm = Math.min(widthPt, heightPt) / PT_PER_MM;
+  for (const [name, long] of Object.entries(ISO_A_LONG_MM)) {
+    const short = long / Math.SQRT2;
+    if (Math.abs(longMm - long) / long < 0.03 && Math.abs(shortMm - short) / short < 0.03) return name;
+  }
+  return null;
+}
+/** The sheet a scale note was drawn for: "1:100 @ A1", "1:50 AT A3", "1:100@A1". */
+export function notedPaperSize(parts: string[]): string | null {
+  const m = _canonScaleTextForPaper(parts.join(" ")).match(/1:\d+(?:@|AT)(A[0-4])(?![0-9])/);
+  return m ? m[1] : null;
+}
+const _canonScaleTextForPaper = (s: string): string => s.replace(/\s+/g, "").toUpperCase();
+/**
+ * Correct a metric ratio for a sheet issued at a different size than drawn.
+ * 1:100 @ A1 printed on an A3 page measures as 1:200. Returns null when no
+ * correction applies (imperial label, no note, unknown or same sheet).
+ */
+export function paperAdjustedScale(label: string, noted: string | null, actual: string | null): Scale | null {
+  const m = /^1:(\d+)$/.exec(label);
+  if (!m || !noted || !actual || noted === actual) return null;
+  const factor = ISO_A_LONG_MM[noted] / ISO_A_LONG_MM[actual];
+  const ratio = Math.round(Number(m[1]) * factor);
+  return { label: `1:${ratio} (1:${m[1]} @ ${noted}, sheet is ${actual})`, upp: metric(ratio) };
+}
 
 // Pull the drawing's sheet number (e.g. A003, A-101, S1.1) from the title block —
 // the largest sheet-number-shaped token in the lower-right region of the page.
@@ -224,9 +268,17 @@ export function detectScale(textContent: TextContentLike, viewport: Viewport): D
   }
   const tbHits = _scaleHits(tb);
   const allHits = _scaleHits(all);
-  if (tbHits.length) return { upp: tbHits[0].upp, label: tbHits[0].label, multi: allHits.length > 1 };
-  if (allHits.length === 1) return { upp: allHits[0].upp, label: allHits[0].label, multi: false };
-  return null;
+  let out: DetectedScale | null = null;
+  if (tbHits.length) out = { upp: tbHits[0].upp, label: tbHits[0].label, multi: allHits.length > 1 };
+  else if (allHits.length === 1) out = { upp: allHits[0].upp, label: allHits[0].label, multi: false };
+  if (!out) return null;
+  // AU sets: "1:100 @ A1" issued on an A3 page reads 1:200 on this sheet.
+  const vs = Math.hypot(viewport.transform?.[0] ?? 1, viewport.transform?.[1] ?? 0) || 1;
+  const actual = isoSheetSize(W / vs, H / vs);
+  const noted = notedPaperSize(tb) || notedPaperSize(all);
+  const adj = paperAdjustedScale(out.label, noted, actual);
+  if (adj && noted && actual) return { ...out, upp: adj.upp, label: adj.label, paper: { noted, actual } };
+  return out;
 }
 
 // ── positioned text for ink classification (One-Click) ──────────────────────

@@ -36,7 +36,7 @@ const DISCLAIMER = "Quantities derived from drawings at stated scales; verify in
 // one-line hints for the opt-in columns in the picker (waste hint sits under
 // the second waste checkbox so it reads once for the pair)
 const COL_HINTS = {
-  waste_lf: "Waste SF/LF = (w/Waste) − measured",
+  waste_lf: "Waste = (w/Waste) − measured",
   perimeter_ref: "Perimeter is reference only — includes openings; not totaled",
 };
 
@@ -468,16 +468,16 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
               <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
                 <strong style={{ fontFamily: "var(--f-display)", fontSize: 13 }}>Columns</strong>
                 <div style={{ flex: 1 }} />
-                <button onClick={applyLaborPreset} title="No-waste actuals per condition — hides SF/SY w/Waste, shows Total SF"
+                <button onClick={applyLaborPreset} title={units === "metric" ? "No-waste actuals per condition: hides m² w/Waste, shows Total m²" : "No-waste actuals per condition — hides SF/SY w/Waste, shows Total SF"}
                   style={{ border: "none", background: "transparent", color: "var(--cobalt)", cursor: "pointer", fontSize: 11.5, padding: "0 10px 0 0" }}>Labor view</button>
                 <button onClick={() => { setColPrefs({}); saveColPrefs({}); }} title="Back to the default column set"
                   style={{ border: "none", background: "transparent", color: "var(--cobalt)", cursor: "pointer", fontSize: 11.5, padding: "0 10px 0 0" }}>Reset</button>
                 <button onClick={() => setShowCols(false)} title="Close"
                   style={{ border: "none", background: "transparent", color: "var(--ink-muted)", cursor: "pointer", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
               </div>
-              {TABLE_PROFILE.filter((c) => !c.locked && c.defaultVisible).map(colCheckbox)}
+              {applyUnits(TABLE_PROFILE, units).filter((c) => !c.locked && c.defaultVisible).map(colCheckbox)}
               <div style={{ borderTop: "1px solid var(--ink-faint)", margin: "8px 0 4px", paddingTop: 6, fontFamily: "var(--f-mono)", fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>Optional</div>
-              {TABLE_PROFILE.filter((c) => !c.locked && !c.defaultVisible).map(colCheckbox)}
+              {applyUnits(TABLE_PROFILE, units).filter((c) => !c.locked && !c.defaultVisible).map(colCheckbox)}
               <div style={{ borderTop: "1px solid var(--ink-faint)", margin: "8px 0 4px", paddingTop: 6, fontFamily: "var(--f-mono)", fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>Custom columns</div>
               {customCols.length ? customCols.map(colCheckbox) : (
                 <div style={{ fontSize: 10.5, color: "var(--ink-muted)", lineHeight: 1.5 }}>No custom columns yet — define them from the condition bar in the canvas.</div>
