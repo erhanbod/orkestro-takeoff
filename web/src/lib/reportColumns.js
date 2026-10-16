@@ -201,7 +201,7 @@ export function specColProfile(conditions) {
 // least one condition carries a visible value — a project that never uses
 // them produces zero extra columns.
 export const LABOR_FIELDS = [
-  { field: "laborType", header: "Labor Type" },
+  { field: "laborType", header: "Labour Type" },
   { field: "subfloorType", header: "Subfloor Type" },
 ];
 

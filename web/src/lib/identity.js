@@ -29,7 +29,7 @@ export function loadCompany() {
 export function saveCompany(c) {
   try {
     const out = {};
-    for (const k of ["name", "address", "logo"]) {
+    for (const k of ["name", "address", "abn", "logo"]) {
       const v = c?.[k];
       if (v && String(v).trim()) out[k] = v;
     }
@@ -55,7 +55,7 @@ const PKEY = "opentakeoff_company_profiles";
 // injected keys) — the same gate loadCompany applies, plus a required id
 function cleanProfile(p) {
   const out = {};
-  for (const k of ["id", "name", "address", "logo"]) {
+  for (const k of ["id", "name", "address", "abn", "logo"]) {
     // trim + drop empty-after-trim, so the profile can't hold a blank-looking
     // value that saveCompany() would drop from the mirrored legacy company
     const v = typeof p?.[k] === "string" ? p[k].trim() : "";
@@ -109,7 +109,7 @@ export function saveProfiles(state) {
     if (profiles.length) localStorage.setItem(PKEY, JSON.stringify({ profiles, activeId }));
     else localStorage.removeItem(PKEY);
     const act = activeProfile({ profiles, activeId });
-    saveCompany(act ? { name: act.name, address: act.address, logo: act.logo } : {});
+    saveCompany(act ? { name: act.name, address: act.address, logo: act.logo, ...(act.abn ? { abn: act.abn } : {}) } : {});
     return true;
   } catch {
     return false; // quota / private mode

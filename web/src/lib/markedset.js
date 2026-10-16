@@ -50,6 +50,7 @@ import { NOTE_PT, layoutNote, noteBox, lineBaseline } from "./markupText.js";
 import { dimLabel } from "./units";
 import { sourcePageMode, sourceStampNote, noCanvasForRasterMessage } from "./markedsetSource.js";
 import { qtyLabels, resolveMarkup, FIELD_WARN_INK, FIELD_WARN_INK_DARK } from "./noteFields.ts";
+import { formatAbn } from "./abn.js";
 
 const COBALT = "#1f3fc7";
 const DEDUCT_RED = "#b03a26";
@@ -339,7 +340,9 @@ export async function buildMarkedSetPdf({ projectName, dark, sheets, shapes, mar
         draw(text, { x, y: idY, size: 10, font: bold, color: ink });
         idY -= 12;
       }
-      for (const raw of String(company?.address || "").split("\n")) {
+      const idLines = String(company?.address || "").split("\n");
+      if (company?.abn) idLines.push(`ABN ${formatAbn(company.abn)}`);
+      for (const raw of idLines) {
         const t = raw.trim();
         if (!t || idY < 652) continue;
         const { text, x } = rightAligned(t, 8.5, font);

@@ -24,6 +24,7 @@ import { buildContribution, sendContribution, isContributeConfigured } from "../
 import { activeTheme, saveActiveThemeFile, clearActiveTheme } from "../lib/reportTheme.js";
 import { normalizeLogoToPng, loadProfiles, saveProfiles, activeProfile, updateActiveProfile, addProfile, setActiveProfile, removeProfile } from "../lib/identity.js";
 import { resolveBranding, loadBrandingSelection, saveBrandingSelection } from "../lib/branding.js";
+import { isValidAbn, formatAbn } from "../lib/abn.js";
 import { projectIdFromUrl } from "../lib/store.js";
 import { describeConditionEdit, proposedConditionEditRows } from "../lib/proposals.js";
 import { qtyLabels, resolveNote } from "../lib/noteFields.ts";
@@ -469,7 +470,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
                 <strong style={{ fontFamily: "var(--f-display)", fontSize: 13 }}>Columns</strong>
                 <div style={{ flex: 1 }} />
                 <button onClick={applyLaborPreset} title={units === "metric" ? "No-waste actuals per condition: hides m² w/Waste, shows Total m²" : "No-waste actuals per condition — hides SF/SY w/Waste, shows Total SF"}
-                  style={{ border: "none", background: "transparent", color: "var(--cobalt)", cursor: "pointer", fontSize: 11.5, padding: "0 10px 0 0" }}>Labor view</button>
+                  style={{ border: "none", background: "transparent", color: "var(--cobalt)", cursor: "pointer", fontSize: 11.5, padding: "0 10px 0 0" }}>Labour view</button>
                 <button onClick={() => { setColPrefs({}); saveColPrefs({}); }} title="Back to the default column set"
                   style={{ border: "none", background: "transparent", color: "var(--cobalt)", cursor: "pointer", fontSize: 11.5, padding: "0 10px 0 0" }}>Reset</button>
                 <button onClick={() => setShowCols(false)} title="Close"
@@ -494,7 +495,7 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
                   a value typed in from the Supporting Materials panel */}
               {laborCols.length > 0 && (
                 <>
-                  <div style={{ borderTop: "1px solid var(--ink-faint)", margin: "8px 0 4px", paddingTop: 6, fontFamily: "var(--f-mono)", fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>Labor & subfloor</div>
+                  <div style={{ borderTop: "1px solid var(--ink-faint)", margin: "8px 0 4px", paddingTop: 6, fontFamily: "var(--f-mono)", fontSize: 9.5, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-muted)" }}>Labour &amp; subfloor</div>
                   {laborCols.map(colCheckbox)}
                 </>
               )}
@@ -664,10 +665,11 @@ export default function ReportPanel({ projectName, onProjectName, conditions, sh
               {brand.clear ? (
                 <>
                   {company.logo && <img src={company.logo} alt="" style={{ maxHeight: 46, maxWidth: 170, objectFit: "contain", display: "block" }} />}
-                  {(company.name || company.address) && (
+                  {(company.name || company.address || company.abn) && (
                     <div style={{ minWidth: 0 }}>
                       {company.name && <div style={{ fontFamily: "var(--f-display)", fontWeight: 700, fontSize: 12.5, lineHeight: 1.15 }}>{company.name}</div>}
                       {company.address && <div style={{ fontSize: 11, color: "var(--ink-muted)", whiteSpace: "pre-line", lineHeight: 1.35 }}>{company.address}</div>}
+                      {company.abn && <div style={{ fontSize: 11, color: "var(--ink-muted)", lineHeight: 1.35 }}>ABN {formatAbn(company.abn)}</div>}
                     </div>
                   )}
                 </>
@@ -1073,12 +1075,18 @@ function ProjectInfoModal({ clientInfo = {}, onClientInfo, onSaved, onClose }) {
           <label style={row}>
             <span className="field-label">Name</span>
             <input name="company-name" autoComplete="organization" value={active.name || ""} onChange={(e) => editActive({ name: e.target.value })}
-              placeholder="Your trade name" className="field-input" style={{ marginTop: 4 }} />
+              placeholder="Your trading name" className="field-input" style={{ marginTop: 4 }} />
           </label>
           <label style={row}>
             <span className="field-label">Address</span>
             <textarea name="company-address" autoComplete="street-address" value={active.address || ""} onChange={(e) => editActive({ address: e.target.value })}
-              rows={2} placeholder={"Street\nCity, ST"} className="field-input" style={{ marginTop: 4, resize: "vertical" }} />
+              rows={2} placeholder={"Street\nSuburb NSW 2000"} className="field-input" style={{ marginTop: 4, resize: "vertical" }} />
+          </label>
+          <label style={row}>
+            <span className="field-label">ABN</span>
+            <input name="company-abn" autoComplete="off" inputMode="numeric" value={active.abn || ""} onChange={(e) => editActive({ abn: e.target.value })}
+              placeholder="12 345 678 901" className="field-input" style={{ marginTop: 4 }} />
+            {active.abn && !isValidAbn(active.abn) && <p style={err}>That ABN doesn't pass the ABN checksum. Check the digits.</p>}
           </label>
           <div style={row}>
             <span className="field-label">Logo</span>
@@ -1141,7 +1149,7 @@ function ProjectInfoModal({ clientInfo = {}, onClientInfo, onSaved, onClose }) {
             </label>
             <label style={{ ...row, flex: 1 }}>
               <span className="field-label">Date</span>
-              <input name="client-date" autoComplete="off" value={clientInfo.date || ""} onChange={client("date")} placeholder={'e.g. "Bid 7/12"'}
+              <input name="client-date" autoComplete="off" value={clientInfo.date || ""} onChange={client("date")} placeholder={'e.g. "Tender 16/10/2026"'}
                 className="field-input" style={{ marginTop: 4 }} />
             </label>
           </div>

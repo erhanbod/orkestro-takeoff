@@ -87,3 +87,12 @@ test("AU tile seed: 20 kg adhesive and 5 kg grout, no imperial trowel notes", ()
   assert.ok(m2PerBag > 20 && m2PerBag < 40, String(m2PerBag));
   assert.ok(!FLOORING_DEFAULTS.some((t: any) => t.finish_tag === "VCT-1"));
 });
+
+import { isValidAbn, formatAbn } from "../src/lib/abn.js";
+test("ABN checksum and formatting", () => {
+  assert.ok(isValidAbn("51 824 753 556"));     // ATO's published example
+  assert.ok(!isValidAbn("51 824 753 557"));
+  assert.ok(!isValidAbn("1234"));
+  assert.equal(formatAbn("51824753556"), "51 824 753 556");
+  assert.equal(formatAbn("abc"), "abc");
+});

@@ -1232,7 +1232,7 @@ function TakeoffsPanel({
             <div style={{ marginBottom: 6, color: "var(--ink-muted)" }}>Supporting Materials — order qty = measured ÷ coverage, rounded up.</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }}>Labor</span>
+                <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }}>Labour</span>
                 <input name="condition-labor-type" value={c.laborType || ""} placeholder="e.g. Glue-down, Float, Nail-down"
                   onChange={(e) => onUpdateCond({ laborType: e.target.value })}
                   style={{ ...ip, flex: 1, minWidth: 0 }} />

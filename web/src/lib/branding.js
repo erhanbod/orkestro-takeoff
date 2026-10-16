@@ -38,7 +38,7 @@ export function resolveBranding(sel) {
     clear,
     // full identity for the masthead firm block + cover identity column; null in
     // default mode so every `company?.x` guard degrades to the OpenTakeoff path
-    company: clear ? { name: profile.name, address: profile.address, logo: profile.logo } : null,
+    company: clear ? { name: profile.name, address: profile.address, logo: profile.logo, ...(profile.abn ? { abn: profile.abn } : {}) } : null,
     // firm text / "Prepared by" cell / export title tag — the trade name when
     // clear-labelling (a logo-only profile has no name → keep OpenTakeoff)
     brandName: (clear && profile.name) ? profile.name : OT_NAME,
