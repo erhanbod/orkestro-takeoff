@@ -142,7 +142,7 @@ export function paperAdjustedScale(label: string, noted: string | null, actual: 
   if (!m || !noted || !actual || noted === actual) return null;
   const factor = ISO_A_LONG_MM[noted] / ISO_A_LONG_MM[actual];
   const ratio = Math.round(Number(m[1]) * factor);
-  return { label: `1:${ratio} (1:${m[1]} @ ${noted}, sheet is ${actual})`, upp: metric(ratio) };
+  return { label: `1:${ratio} (1:${m[1]} @ ${noted} on ${actual})`, upp: metric(ratio) };
 }
 
 // Pull the drawing's sheet number (e.g. A003, A-101, S1.1) from the title block —

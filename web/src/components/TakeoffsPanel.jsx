@@ -1282,15 +1282,18 @@ function TakeoffsPanel({
                 const setRate = (k) => (v) => onUpdateCond({ pricing: { ...(c.pricing || {}), [k]: v } });
                 const conv = { toShown: (v) => rateToDisplay(v, kind, units), toStored: (v) => rateFromDisplay(v, kind, units) };
                 return (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }} title="Rates for the Report estimate (AUD, ex GST)">Rates</span>
-                    <span style={{ color: "var(--ink-muted)" }}>supply</span>
-                    <PriceInput name="condition-rate-supply" value={c.pricing?.supply} onCommit={setRate("supply")} suffix={`/${ru}`} {...conv}
-                      title={`Supply rate, $ per ${ru} ex GST. Prices the waste-adjusted quantity (what you buy).`} />
-                    <span style={{ color: "var(--ink-muted)" }}>labour</span>
-                    <PriceInput name="condition-rate-labour" value={c.pricing?.labour} onCommit={setRate("labour")} suffix={`/${ru}`} {...conv}
-                      title={`Labour rate, $ per ${ru} ex GST. Prices the measured quantity (what gets installed).`} />
-                  </div>
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }} title="Report estimate rate (AUD, ex GST)">Supply $</span>
+                      <PriceInput name="condition-rate-supply" value={c.pricing?.supply} onCommit={setRate("supply")} suffix={`/${ru} (w/ waste)`} {...conv}
+                        title={`Supply rate, $ per ${ru} ex GST. Prices the waste-adjusted quantity (what you buy).`} />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ color: "var(--ink-muted)", width: 56, flexShrink: 0 }} title="Report estimate rate (AUD, ex GST)">Labour $</span>
+                      <PriceInput name="condition-rate-labour" value={c.pricing?.labour} onCommit={setRate("labour")} suffix={`/${ru} (measured)`} {...conv}
+                        title={`Labour rate, $ per ${ru} ex GST. Prices the measured quantity (what gets installed).`} />
+                    </div>
+                  </>
                 );
               })()}
             </div>
